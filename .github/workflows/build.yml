@@ -14,15 +14,15 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       # ubuntu-latest already ships the Android SDK; this just caches Gradle.
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
@@ -31,13 +31,13 @@ jobs:
         run: cp app/build/outputs/apk/debug/app-debug.apk HatChat-${{ github.ref_name == 'main' && github.sha || github.ref_name }}.apk
         shell: bash
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: HatChat-apk
           path: HatChat-*.apk
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: HatChat-*.apk
