@@ -1,4 +1,4 @@
-package dev.openinbox.app
+package com.getguruhat.hatchat
 
 import android.app.Application
 import android.content.Context
@@ -7,9 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import dev.openinbox.app.data.InstagramApi
-import dev.openinbox.app.data.TokenStore
-import dev.openinbox.app.data.isMe
+import com.getguruhat.hatchat.data.InstagramApi
+import com.getguruhat.hatchat.data.TokenStore
+import com.getguruhat.hatchat.data.isMe
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive

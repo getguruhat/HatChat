@@ -1,4 +1,4 @@
-package dev.openinbox.app.data
+package com.getguruhat.hatchat.data
 
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
@@ -78,7 +78,7 @@ class TokenStore(context: Context) {
 
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        const val KEY_ALIAS = "openinbox_token_key"
+        const val KEY_ALIAS = "hatchat_token_key"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val KEY_TOKEN = "ig_token"
         const val KEY_IV = "ig_token_iv"

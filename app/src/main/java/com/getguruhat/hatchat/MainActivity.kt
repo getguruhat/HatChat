@@ -1,4 +1,4 @@
-package dev.openinbox.app
+package com.getguruhat.hatchat
 
 import android.net.Uri
 import android.os.Bundle
@@ -34,10 +34,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import dev.openinbox.app.ui.InstagramScreen
-import dev.openinbox.app.ui.MessengerScreen
-import dev.openinbox.app.ui.MessengerWeb
-import dev.openinbox.app.ui.SettingsScreen
+import com.getguruhat.hatchat.ui.InstagramScreen
+import com.getguruhat.hatchat.ui.MessengerScreen
+import com.getguruhat.hatchat.ui.MessengerWeb
+import com.getguruhat.hatchat.ui.SettingsScreen
 
 class MainActivity : ComponentActivity() {
 

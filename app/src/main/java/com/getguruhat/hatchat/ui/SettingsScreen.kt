@@ -1,4 +1,4 @@
-package dev.openinbox.app.ui
+package com.getguruhat.hatchat.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import dev.openinbox.app.InboxViewModel
+import com.getguruhat.hatchat.InboxViewModel
 import java.text.DateFormat
 import java.util.Date
 
@@ -103,7 +103,7 @@ fun SettingsScreen(vm: InboxViewModel, onClearMessengerLogin: () -> Unit) {
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         Text(
-            "OpenInbox is open source and not affiliated with Meta.",
+            "HatChat is open source and not affiliated with Meta.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

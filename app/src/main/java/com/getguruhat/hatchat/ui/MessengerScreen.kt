@@ -1,4 +1,4 @@
-package dev.openinbox.app.ui
+package com.getguruhat.hatchat.ui
 
 import android.annotation.SuppressLint
 import android.content.Context

@@ -22,7 +22,7 @@ You don't need App Review or to publish the app. It stays in development mode, w
 4. Click **Generate token** and copy it. It's a long string that starts with `IG`.
 
 ## 4. Put it in the app
-Open OpenInbox → **Settings** → paste it into **Access token** → **Save key**.
+Open HatChat → **Settings** → paste it into **Access token** → **Save key**.
 
 The app checks the key with Instagram, encrypts it with your phone's Keystore, and shows "Connected as @you".
 

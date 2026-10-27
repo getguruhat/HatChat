@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "OpenInbox"
+rootProject.name = "HatChat"
 include(":app")

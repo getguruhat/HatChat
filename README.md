@@ -1,10 +1,10 @@
-# OpenInbox
+# HatChat
 
-A small, open-source Android app for your Instagram DMs and Facebook Messenger chats, so you can uninstall the official apps.
+A small, open-source Android app from [GuruHat](https://github.com/getguruhat) for your Instagram DMs and Facebook Messenger chats, so you can uninstall the official apps.
 
 - **Instagram tab:** reads and answers DMs through Meta's **official** Instagram API. Needs an Instagram **Creator or Business** account and an access key you generate yourself (see [SETUP.md](SETUP.md)).
 - **Messenger tab:** Facebook's own web inbox (`facebook.com/messages`) inside the app. You sign in on Facebook's real page.
-- **Your key stays on your phone.** It's encrypted with an AES-256 key held in the Android Keystore. Backups are turned off, and the app has no server and no analytics. The only network code is [`InstagramApi.kt`](app/src/main/java/dev/openinbox/app/data/InstagramApi.kt).
+- **Your key stays on your phone.** It's encrypted with an AES-256 key held in the Android Keystore. Backups are turned off, and the app has no server and no analytics. The only network code is [`InstagramApi.kt`](app/src/main/java/com/getguruhat/hatchat/data/InstagramApi.kt).
 
 > Not affiliated with, endorsed by, or connected to Meta, Instagram, or Facebook.
 
@@ -23,7 +23,7 @@ A small, open-source Android app for your Instagram DMs and Facebook Messenger c
 
 The APK is built by GitHub Actions. Nothing is needed on your computer.
 
-- **Latest build:** open the **Actions** tab, pick the newest "Build APK" run, and download **OpenInbox-apk**.
+- **Latest build:** open the **Actions** tab, pick the newest "Build APK" run, and download **HatChat-apk**.
 - **Releases:** pushing a tag like `v0.1.0` attaches the APK to a GitHub Release.
 
 To build locally instead, you need JDK 17 and the Android SDK, then run `./gradlew assembleDebug`.
@@ -31,7 +31,7 @@ To build locally instead, you need JDK 17 and the Android SDK, then run `./gradl
 ## Project layout
 
 ```
-app/src/main/java/dev/openinbox/app/
+app/src/main/java/com/getguruhat/hatchat/
   MainActivity.kt          tabs + theme
   InboxViewModel.kt        state, polling, key refresh
   data/TokenStore.kt       Keystore-encrypted key storage

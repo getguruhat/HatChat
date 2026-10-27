@@ -1,4 +1,4 @@
-package dev.openinbox.app.ui
+package com.getguruhat.hatchat.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -42,9 +42,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.openinbox.app.InboxViewModel
-import dev.openinbox.app.data.InstagramApi
-import dev.openinbox.app.data.isMe
+import com.getguruhat.hatchat.InboxViewModel
+import com.getguruhat.hatchat.data.InstagramApi
+import com.getguruhat.hatchat.data.isMe
 
 @Composable
 fun InstagramScreen(vm: InboxViewModel, onOpenSettings: () -> Unit) {

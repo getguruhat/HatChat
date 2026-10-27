@@ -1,4 +1,4 @@
-package dev.openinbox.app.data
+package com.getguruhat.hatchat.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async

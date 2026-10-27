@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.openinbox.app"
+    namespace = "com.getguruhat.hatchat"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.openinbox.app"
+        applicationId = "com.getguruhat.hatchat"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
