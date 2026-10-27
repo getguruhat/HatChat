@@ -19,15 +19,14 @@ A small, open-source Android app for your Instagram DMs and Facebook Messenger c
 | Notifications | v0.1 has no push notifications. Instagram chats refresh every 15 s while open. |
 | Feed / Reels / Stories | Not included, on purpose. |
 
-## Build
+## Download / build
 
-Requirements: JDK 17 and the Android SDK (platform 35).
+The APK is built by GitHub Actions. Nothing is needed on your computer.
 
-```bash
-./gradlew assembleDebug
-```
+- **Latest build:** open the **Actions** tab, pick the newest "Build APK" run, and download **OpenInbox-apk**.
+- **Releases:** pushing a tag like `v0.1.0` attaches the APK to a GitHub Release.
 
-The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. Install it with `adb install` or copy it to your phone.
+To build locally instead, you need JDK 17 and the Android SDK, then run `./gradlew assembleDebug`.
 
 ## Project layout
 
