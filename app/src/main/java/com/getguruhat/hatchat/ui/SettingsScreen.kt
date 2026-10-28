@@ -71,6 +71,16 @@ fun SettingsScreen(
             "System follows your phone. Instagram and Messenger switch too (Facebook needs its own Dark mode set to Automatic).",
             style = MaterialTheme.typography.bodySmall,
         )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Swipe between tabs")
+                Text(
+                    "Swipe left or right to move between Instagram, Messenger and Settings.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(checked = vm.swipeTabs, onCheckedChange = vm::setSwipeTabsEnabled)
+        }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         Text("Instagram", style = MaterialTheme.typography.titleLarge)

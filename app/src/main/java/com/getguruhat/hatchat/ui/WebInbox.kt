@@ -7,7 +7,10 @@ import android.net.Uri
 import android.os.Build
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.ViewGroup
+import kotlin.math.abs
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.RenderProcessGoneDetail
@@ -54,6 +57,27 @@ class WebInbox(
 
     /** Receives the unread count from the page title ("(2) Instagram" -> 2), for message alerts. */
     var onUnreadCount: ((Int) -> Unit)? = null
+
+    /** Called with +1 (swipe left: next tab) or -1 (swipe right: previous tab). Null disables swiping. */
+    var onSwipe: ((Int) -> Unit)? = null
+
+    // A fast, clearly sideways fling switches tabs. The page keeps receiving every touch, so its own
+    // scrolling still works; SWIPE_GUARD_JS tells us when the swipe started on something that scrolls
+    // sideways (filter chips, carousels), and those swipes are left to the page.
+    private val density = context.resources.displayMetrics.density
+    private val swipes = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+            val handler = onSwipe ?: return false
+            val start = e1 ?: return false
+            val dx = e2.x - start.x
+            val dy = e2.y - start.y
+            if (abs(dx) < 90 * density || abs(dx) < 2 * abs(dy) || abs(velocityX) < 700 * density) return false
+            webView.evaluateJavascript("!!window.__hatchatNoSwipe") { pageScrolls ->
+                if (pageScrolls != "true") handler(if (dx < 0) 1 else -1)
+            }
+            return true
+        }
+    })
     var inThread by mutableStateOf(false); private set
 
     // Facebook opens straight into the most recent chat; go back to the list once if that
@@ -69,6 +93,8 @@ class WebInbox(
     @SuppressLint("SetJavaScriptEnabled")
     val webView: WebView = WebView(context).apply {
         settings.javaScriptEnabled = true
+        // Observe touches for tab swipes without consuming them (returning false keeps the page working).
+        setOnTouchListener { _, event -> swipes.onTouchEvent(event); false }
         settings.domStorageEnabled = true
         settings.mediaPlaybackRequiresUserGesture = true
         settings.setSupportMultipleWindows(false)
@@ -191,6 +217,7 @@ class WebInbox(
     private fun runPageScripts(view: WebView) {
         if (desktopMode == true) view.evaluateJavascript(FIT_VIEWPORT_JS, null)
         pageScript?.let { view.evaluateJavascript(it, null) }
+        view.evaluateJavascript(SWIPE_GUARD_JS, null)
     }
 
     private val redirects = ArrayDeque<Long>()
@@ -241,6 +268,19 @@ class WebInbox(
         private const val TAG = "HatChat"
         private val UNREAD_TITLE = Regex("^\\((\\d+)\\)")
         // Adds/overrides the viewport tag and keeps it there if the page swaps <head> nodes.
+        // Remembers whether the current touch started inside something that scrolls sideways.
+        private const val SWIPE_GUARD_JS = """(function () {
+  if (window.__hatchatSwipe || !document.documentElement) return;
+  document.addEventListener('touchstart', function (e) {
+    var blocked = false;
+    for (var n = e.target; n && n.nodeType === 1 && n !== document.documentElement; n = n.parentElement) {
+      var cs = getComputedStyle(n);
+      if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth + 4) { blocked = true; break; }
+    }
+    window.__hatchatNoSwipe = blocked;
+  }, { capture: true, passive: true });
+  window.__hatchatSwipe = true;
+})();"""
         private const val FIT_VIEWPORT_JS = """(function () {
   var want = 'width=device-width, initial-scale=1';
   function fit() {

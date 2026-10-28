@@ -37,7 +37,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.getguruhat.hatchat.ui.InstagramScreen
 import com.getguruhat.hatchat.ui.WebInbox
@@ -87,6 +90,9 @@ class MainActivity : ComponentActivity() {
         val messenger = WebInbox.messenger(this, pickFiles)
         instagram.onUnreadCount = { MessageAlerts.onUnreadCount(this, MessageAlerts.Service.Instagram, it) }
         messenger.onUnreadCount = { MessageAlerts.onUnreadCount(this, MessageAlerts.Service.Messenger, it) }
+        val swipeTo: (Int) -> Unit = { step -> if (vm.swipeTabs) { tab = (tab + step).coerceIn(0, 2) } }
+        instagram.onSwipe = swipeTo
+        messenger.onSwipe = swipeTo
 
         askForNotificationsOnce()
 
@@ -130,6 +136,7 @@ class MainActivity : ComponentActivity() {
                         if (vm.instagramWebMode) WebInboxScreen(instagram, visible = tab == 0)
                         WebInboxScreen(messenger, vm.messengerDesktopMode, visible = tab == 1)
                         val overlay = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                            .swipeTabs(vm.swipeTabs, swipeTo)
                         if (tab == 0 && !vm.instagramWebMode) {
                             Box(overlay) { InstagramScreen(vm, onOpenSettings = { tab = 2 }) }
                         }
@@ -198,3 +205,16 @@ class MainActivity : ComponentActivity() {
         const val PREF_ASKED_NOTIFICATIONS = "asked_notifications"
     }
 }
+
+/** Sideways drag on the native screens (Settings, key-mode inbox) switches tabs, like on the web tabs. */
+private fun Modifier.swipeTabs(enabled: Boolean, onSwipe: (Int) -> Unit): Modifier =
+    if (!enabled) this else pointerInput(Unit) {
+        var total = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { total = 0f },
+            onDragEnd = {
+                val threshold = 90.dp.toPx()
+                if (total <= -threshold) onSwipe(1) else if (total >= threshold) onSwipe(-1)
+            },
+        ) { _, amount -> total += amount }
+    }

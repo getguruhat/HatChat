@@ -35,6 +35,8 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
 
     var messageAlerts by mutableStateOf(prefs.getBoolean(MessageAlerts.PREF_ENABLED, true)); private set
 
+    var swipeTabs by mutableStateOf(prefs.getBoolean(PREF_SWIPE, true)); private set
+
     /** Website mode (default) shows every DM; key mode uses the official API, which Meta restricts. */
     var instagramWebMode by mutableStateOf(prefs.getBoolean(PREF_IG_WEB, true)); private set
 
@@ -168,6 +170,11 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         AppTheme.write(getApplication(), mode)
     }
 
+    fun setSwipeTabsEnabled(on: Boolean) {
+        swipeTabs = on
+        prefs.edit().putBoolean(PREF_SWIPE, on).apply()
+    }
+
     fun setMessageAlertsEnabled(on: Boolean) {
         messageAlerts = on
         prefs.edit().putBoolean(MessageAlerts.PREF_ENABLED, on).apply()
@@ -219,6 +226,7 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         const val PREF_DESKTOP = "messenger_desktop_mode"
         const val PREF_IG_WEB = "instagram_web_mode"
+        const val PREF_SWIPE = "swipe_tabs"
         const val POLL_MS = 15_000L
         const val REFRESH_AFTER_MS = 7L * 24 * 60 * 60 * 1000
     }
