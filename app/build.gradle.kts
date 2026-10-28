@@ -12,16 +12,30 @@ android {
         applicationId = "com.getguruhat.hatchat"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.1.1"
+    }
+
+    // CI passes a permanent key (from GitHub secrets) so new builds install over old ones.
+    // Without it, builds fall back to the throwaway debug key.
+    val keystoreFile = System.getenv("HATCHAT_KEYSTORE_FILE")?.let(::file)?.takeIf { it.exists() }
+    val stableSigning = keystoreFile?.let {
+        signingConfigs.create("hatchat") {
+            storeFile = it
+            storeType = "pkcs12"
+            storePassword = System.getenv("HATCHAT_KEYSTORE_PASSWORD")
+            keyAlias = "hatchat"
+            keyPassword = System.getenv("HATCHAT_KEYSTORE_PASSWORD")
+        }
     }
 
     buildTypes {
+        debug {
+            stableSigning?.let { signingConfig = it }
+        }
         release {
             isMinifyEnabled = false
-            // Signed with the debug key so `assembleRelease` gives an installable APK.
-            // Use your own keystore if you publish builds.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = stableSigning ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -33,6 +47,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

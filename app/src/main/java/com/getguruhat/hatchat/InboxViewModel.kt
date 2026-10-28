@@ -164,6 +164,16 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    var diagnostics by mutableStateOf<String?>(null); private set
+
+    fun runDiagnostics() {
+        val client = api ?: return
+        diagnostics = "Asking Instagram…"
+        viewModelScope.launch {
+            diagnostics = "HatChat ${BuildConfig.VERSION_NAME}\n\n" + client.diagnostics()
+        }
+    }
+
     private fun recipientFor(convo: InstagramApi.Conversation): String? {
         convo.otherId?.let { return it }
         val who = me ?: return null

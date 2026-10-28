@@ -23,6 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.getguruhat.hatchat.InboxViewModel
@@ -34,6 +38,7 @@ fun SettingsScreen(vm: InboxViewModel, onClearMessengerLogin: () -> Unit) {
     var keyInput by remember { mutableStateOf("") }
     var confirmRemove by remember { mutableStateOf(false) }
     var messengerCleared by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboardManager.current
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -100,6 +105,26 @@ fun SettingsScreen(vm: InboxViewModel, onClearMessengerLogin: () -> Unit) {
             Text("Sign out of Messenger")
         }
         if (messengerCleared) Text("Signed out.", style = MaterialTheme.typography.bodySmall)
+
+        if (vm.hasToken) {
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            Text("Diagnostics", style = MaterialTheme.typography.titleLarge)
+            Text(
+                "Shows Instagram's raw replies, with your key hidden, so you can share them when something looks wrong.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = vm::runDiagnostics) { Text("Run diagnostics") }
+                vm.diagnostics?.let { report ->
+                    TextButton(onClick = { clipboard.setText(AnnotatedString(report)) }) { Text("Copy") }
+                }
+            }
+            vm.diagnostics?.let { report ->
+                SelectionContainer {
+                    Text(report, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
         Text(

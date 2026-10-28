@@ -120,6 +120,30 @@ class InstagramApi(private val token: String) {
         post("/me/messages", body)
     }
 
+    /**
+     * Raw replies from the account and conversation endpoints, for troubleshooting.
+     * The token is stripped from the text (paging links contain it), so it is safe to share.
+     */
+    suspend fun diagnostics(): String {
+        val calls = listOf(
+            "/me" to mapOf("fields" to "user_id,username,account_type"),
+            "/me/conversations" to mapOf("platform" to "instagram"),
+            "/me/conversations" to mapOf("platform" to "instagram", "fields" to "participants,updated_time"),
+        )
+        return calls.joinToString("\n\n") { (path, params) ->
+            val label = "GET $path?" + params.entries.joinToString("&") { "${it.key}=${it.value}" }
+            val body = try {
+                get(path, params).toString(2)
+            } catch (e: ApiException) {
+                "ERROR ${e.code ?: ""}: ${e.message}"
+            } catch (e: Exception) {
+                "ERROR: ${e.message}"
+            }
+            "$label\n$body"
+        }.replace(token, "<key hidden>")
+            .replace(Regex("access_token=[^&\"\\s]+"), "access_token=<key hidden>")
+    }
+
     /** Swaps a long-lived token (60 days) for a fresh one. Returns the new token. */
     suspend fun refreshToken(): String {
         val json = get("/refresh_access_token", mapOf("grant_type" to "ig_refresh_token"), versioned = false)
