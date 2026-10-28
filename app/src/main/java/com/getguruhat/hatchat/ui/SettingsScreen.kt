@@ -24,6 +24,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.getguruhat.hatchat.R
+import com.getguruhat.hatchat.BuildConfig
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
@@ -203,10 +217,51 @@ fun SettingsScreen(
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        AboutSection()
+    }
+}
+
+/** Same About block as GuruHat's other apps (see AI Meter): who makes it, and a way to support it. */
+@Composable
+private fun AboutSection() {
+    val links = LocalUriHandler.current
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(
+        Modifier.fillMaxWidth().padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text("About", style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(10.dp))
+        Image(
+            painterResource(R.drawable.about_icon),
+            contentDescription = "HatChat icon",
+            modifier = Modifier.size(96.dp),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text("HatChat", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Version ${BuildConfig.VERSION_NAME}", color = muted)
+        Text("A GuruHat open-source tool", fontWeight = FontWeight.SemiBold)
+        HorizontalDivider(Modifier.padding(vertical = 10.dp).fillMaxWidth(0.85f))
+        TextButton(onClick = { links.openUri(SUPPORT_URL) }) {
+            Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Support HatChat", style = MaterialTheme.typography.titleMedium)
+        }
+        Text("Thank you for supporting this project!", style = MaterialTheme.typography.bodySmall, color = muted)
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(onClick = { links.openUri("https://guruhat.com/apps/hatchat/") }) { Text("guruhat.com") }
+            TextButton(onClick = { links.openUri("https://github.com/getguruhat/HatChat") }) { Text("Source code") }
+        }
         Text(
-            "HatChat is open source and not affiliated with Meta.",
+            "Not affiliated with Meta, Instagram or Facebook.",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = muted,
+            textAlign = TextAlign.Center,
         )
     }
 }
+
+// GuruHat's donation page, shared with AI Meter.
+private const val SUPPORT_URL = "https://www.paypal.com/donate/?hosted_button_id=FHGYWD46722JS"
