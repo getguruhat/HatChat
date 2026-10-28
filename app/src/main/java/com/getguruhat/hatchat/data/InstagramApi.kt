@@ -50,17 +50,27 @@ class InstagramApi(private val token: String) {
         )
     }
 
+    /**
+     * Instagram filters conversations *after* paging, so a page can come back empty
+     * while later pages still hold chats. Keep following the cursor for a few pages.
+     */
     suspend fun conversations(me: Me): List<Conversation> {
-        val params = mapOf("platform" to "instagram", "limit" to "50")
-        val json = try {
-            get("/me/conversations", params + ("fields" to "participants,updated_time"))
-        } catch (e: ApiException) {
-            // Fall back to the documented minimal call if `participants` is rejected.
-            get("/me/conversations", params)
+        var params = mapOf("platform" to "instagram", "limit" to "50", "fields" to "participants,updated_time")
+        val items = mutableListOf<JSONObject>()
+        var after: String? = null
+        for (page in 0 until MAX_PAGES) {
+            val json = try {
+                get("/me/conversations", params + listOfNotNull(after?.let { "after" to it }))
+            } catch (e: ApiException) {
+                if (page > 0 || "fields" !in params) throw e
+                // Fall back to the documented minimal call if `participants` is rejected.
+                params = params - "fields"
+                get("/me/conversations", params)
+            }
+            json.optJSONArray("data")?.let { arr -> (0 until arr.length()).forEach { items += arr.getJSONObject(it) } }
+            after = nextCursor(json) ?: break
         }
-        val data = json.optJSONArray("data") ?: return emptyList()
-        return (0 until data.length()).map { i ->
-            val c = data.getJSONObject(i)
+        return items.map { c ->
             val people = c.optJSONObject("participants")?.optJSONArray("data")
             val other = people?.let { arr ->
                 (0 until arr.length()).map { arr.getJSONObject(it) }
@@ -125,25 +135,48 @@ class InstagramApi(private val token: String) {
      * The token is stripped from the text (paging links contain it), so it is safe to share.
      */
     suspend fun diagnostics(): String {
-        val calls = listOf(
-            "/me" to mapOf("fields" to "user_id,username,account_type"),
-            "/me/conversations" to mapOf("platform" to "instagram"),
-            "/me/conversations" to mapOf("platform" to "instagram", "fields" to "participants,updated_time"),
-        )
-        return calls.map { (path, params) ->
-            val label = "GET $path?" + params.entries.joinToString("&") { "${it.key}=${it.value}" }
-            val body = try {
-                get(path, params).toString(2)
-            } catch (e: ApiException) {
-                "ERROR ${e.code ?: ""}: ${e.message}"
+        val out = StringBuilder()
+        fun section(label: String, body: String) = out.append(label).append('\n').append(body).append("\n\n")
+
+        try {
+            section("GET /me?fields=user_id,username,account_type",
+                get("/me", mapOf("fields" to "user_id,username,account_type")).toString(2))
+        } catch (e: Exception) {
+            section("GET /me", "ERROR: ${e.message}")
+        }
+
+        // Walk the conversation pages and summarise each one.
+        val params = mapOf("platform" to "instagram", "limit" to "50", "fields" to "participants,updated_time")
+        var after: String? = null
+        var total = 0
+        for (page in 1..MAX_PAGES) {
+            val label = "GET /me/conversations page $page"
+            val json = try {
+                get("/me/conversations", params + listOfNotNull(after?.let { "after" to it }))
             } catch (e: Exception) {
-                "ERROR: ${e.message}"
+                section(label, "ERROR: ${e.message}")
+                break
             }
-            "$label\n$body"
-        }.joinToString("\n\n")
-            .replace(token, "<key hidden>")
+            val data = json.optJSONArray("data")
+            val count = data?.length() ?: 0
+            total += count
+            after = nextCursor(json)
+            section(label, "$count conversation(s)" +
+                (if (count > 0) "\nfirst: ${data!!.getJSONObject(0).toString(2)}" else "") +
+                "\nmore pages: ${if (after != null) "yes" else "no"}")
+            if (after == null) break
+        }
+        out.append("Total conversations returned: $total")
+
+        // Strip the token from paging URLs first, then anywhere else it might appear.
+        return out.toString()
             .replace(Regex("access_token=[^&\"\\s]+"), "access_token=<key hidden>")
+            .replace(token, "<key hidden>")
     }
+
+    private fun nextCursor(json: JSONObject): String? =
+        json.optJSONObject("paging")?.takeIf { it.has("next") }
+            ?.optJSONObject("cursors")?.optString("after")?.takeIf { it.isNotEmpty() }
 
     /** Swaps a long-lived token (60 days) for a fresh one. Returns the new token. */
     suspend fun refreshToken(): String {
@@ -199,6 +232,7 @@ class InstagramApi(private val token: String) {
     companion object {
         const val HOST = "https://graph.instagram.com"
         const val VERSION = "v26.0"
+        private const val MAX_PAGES = 10
     }
 }
 
