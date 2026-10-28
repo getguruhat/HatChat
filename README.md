@@ -44,7 +44,7 @@ adb logcat -s HatChat                # live log: page loads, blocked pages, API 
 
 The log never contains your password, key or message text.
 
-To look inside the Instagram or Messenger page itself, turn on **Settings → Allow USB inspection of web tabs**, then open `chrome://inspect` in desktop Chrome. Turn it off again when you're done: while it's on, any computer you plug into can read those pages.
+To look inside the Instagram or Messenger page itself, open `chrome://inspect` in desktop Chrome while the phone is connected. HatChat's web tabs are always inspectable this way. That only works when the phone's own **Developer options → USB debugging** is on and you've approved the computer, so on a normal phone nothing can reach them. If you turn USB debugging on, remember that any computer you approve can read your logged-in Instagram and Messenger pages.
 
 ## Project layout
 

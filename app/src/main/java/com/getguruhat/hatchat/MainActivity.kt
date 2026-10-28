@@ -80,7 +80,9 @@ class MainActivity : ComponentActivity() {
             Unit
         }
         // One WebView per tab for the whole session, so switching tabs doesn't reload them.
-        android.webkit.WebView.setWebContentsDebuggingEnabled(vm.webInspection)
+        // Inspectable over USB (chrome://inspect) for troubleshooting; this needs the phone's
+        // own USB debugging to be on and the computer to be approved, so it is off for most people.
+        android.webkit.WebView.setWebContentsDebuggingEnabled(true)
         val instagram = WebInbox.instagram(this, pickFiles)
         val messenger = WebInbox.messenger(this, pickFiles)
         instagram.onUnreadCount = { MessageAlerts.onUnreadCount(this, MessageAlerts.Service.Instagram, it) }
@@ -138,6 +140,7 @@ class MainActivity : ComponentActivity() {
                                     onSignOutInstagram = instagram::signOut,
                                     onClearMessengerLogin = messenger::signOut,
                                     onAlertsEnabled = ::askForNotifications,
+                                    onThemeChanged = ::recreate,
                                 )
                             }
                         }
@@ -145,6 +148,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    // Light/Dark override: switches the night resources, so both the app colours and the web
+    // pages (prefers-color-scheme follows the app theme) change together.
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppTheme.wrap(base))
     }
 
     override fun onNewIntent(intent: Intent) {

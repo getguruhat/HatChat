@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,6 +40,7 @@ fun SettingsScreen(
     onSignOutInstagram: () -> Unit,
     onClearMessengerLogin: () -> Unit,
     onAlertsEnabled: () -> Unit,
+    onThemeChanged: () -> Unit,
 ) {
     var keyInput by remember { mutableStateOf("") }
     var confirmRemove by remember { mutableStateOf(false) }
@@ -50,6 +52,27 @@ fun SettingsScreen(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        Text("Appearance", style = MaterialTheme.typography.titleLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("system" to "System", "light" to "Light", "dark" to "Dark").forEach { (mode, label) ->
+                FilterChip(
+                    selected = vm.themeMode == mode,
+                    onClick = {
+                        if (vm.themeMode != mode) {
+                            vm.setTheme(mode)
+                            onThemeChanged()
+                        }
+                    },
+                    label = { Text(label) },
+                )
+            }
+        }
+        Text(
+            "System follows your phone. Instagram and Messenger switch too (Facebook needs its own Dark mode set to Automatic).",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
         Text("Instagram", style = MaterialTheme.typography.titleLarge)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -167,18 +190,6 @@ fun SettingsScreen(
                     Text(report, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                 }
             }
-        }
-
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Allow USB inspection of web tabs")
-                Text(
-                    "For troubleshooting only. While on, a computer connected by USB can see the Instagram and Messenger pages. Turn it off when done.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            Switch(checked = vm.webInspection, onCheckedChange = vm::allowWebInspection)
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))

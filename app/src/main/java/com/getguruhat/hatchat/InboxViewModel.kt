@@ -38,8 +38,8 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
     /** Website mode (default) shows every DM; key mode uses the official API, which Meta restricts. */
     var instagramWebMode by mutableStateOf(prefs.getBoolean(PREF_IG_WEB, true)); private set
 
-    /** Lets a computer over USB inspect the web tabs (chrome://inspect). Off unless turned on. */
-    var webInspection by mutableStateOf(prefs.getBoolean(PREF_INSPECT, false)); private set
+    /** "system", "light" or "dark"; applied by MainActivity when it starts (see [AppTheme]). */
+    var themeMode by mutableStateOf(AppTheme.read(app)); private set
 
     init {
         store.loadToken()?.let { token ->
@@ -163,10 +163,9 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         if (!on && conversations.isEmpty()) loadInbox()
     }
 
-    fun allowWebInspection(on: Boolean) {
-        webInspection = on
-        prefs.edit().putBoolean(PREF_INSPECT, on).apply()
-        android.webkit.WebView.setWebContentsDebuggingEnabled(on)
+    fun setTheme(mode: String) {
+        themeMode = mode
+        AppTheme.write(getApplication(), mode)
     }
 
     fun setMessageAlertsEnabled(on: Boolean) {
@@ -220,7 +219,6 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         const val PREF_DESKTOP = "messenger_desktop_mode"
         const val PREF_IG_WEB = "instagram_web_mode"
-        const val PREF_INSPECT = "web_inspection"
         const val POLL_MS = 15_000L
         const val REFRESH_AFTER_MS = 7L * 24 * 60 * 60 * 1000
     }
