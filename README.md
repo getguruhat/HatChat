@@ -38,23 +38,26 @@ To build locally instead, you need JDK 17 and the Android SDK, then run `./gradl
 With the phone connected by USB (USB debugging on), you only need `adb`, no compiler:
 
 ```bash
-adb install -r HatChat-v0.1.5.apk   # install a build downloaded from Releases
-adb logcat -s HatChat               # live API log: paths, status codes, Instagram's errors
+adb install -r HatChat-v0.1.13.apk   # install a build downloaded from Releases
+adb logcat -s HatChat                # live log: page loads, blocked pages, API errors
 ```
 
-The log never contains your key or message text. **Settings → Run diagnostics** shows the same information on the phone.
+The log never contains your password, key or message text.
+
+To look inside the Instagram or Messenger page itself, turn on **Settings → Allow USB inspection of web tabs**, then open `chrome://inspect` in desktop Chrome. Turn it off again when you're done: while it's on, any computer you plug into can read those pages.
 
 ## Project layout
 
 ```
 app/src/main/java/com/getguruhat/hatchat/
   MainActivity.kt          tabs + theme
-  InboxViewModel.kt        state, polling, key refresh
+  InboxViewModel.kt        state, settings, optional key mode
+  update/                  in-app updates from GitHub Releases
   data/TokenStore.kt       Keystore-encrypted key storage
-  data/InstagramApi.kt     official Instagram Graph API client
-  ui/InstagramScreen.kt    conversation list + chat
-  ui/MessengerScreen.kt    Messenger WebView
-  ui/SettingsScreen.kt     paste / refresh / remove key
+  data/InstagramApi.kt     official Instagram API client (key mode)
+  ui/InstagramScreen.kt    key-mode inbox + chat
+  ui/WebInbox.kt           Instagram + Messenger web tabs (DMs-only rules)
+  ui/SettingsScreen.kt     Instagram/Messenger options, key, diagnostics
 ```
 
 ## License

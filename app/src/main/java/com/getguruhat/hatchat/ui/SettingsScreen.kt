@@ -63,49 +63,49 @@ fun SettingsScreen(vm: InboxViewModel, onSignOutInstagram: () -> Unit, onClearMe
             }
             if (instagramCleared) Text("Signed out.", style = MaterialTheme.typography.bodySmall)
         } else {
-        Text("Instagram key", style = MaterialTheme.typography.titleMedium)
+            Text("Instagram key", style = MaterialTheme.typography.titleMedium)
 
-        if (vm.hasToken) {
-            Text("Connected" + (vm.me?.username?.let { " as @$it" } ?: ""))
-            if (vm.tokenSavedAt > 0) {
+            if (vm.hasToken) {
+                Text("Connected" + (vm.me?.username?.let { " as @$it" } ?: ""))
+                if (vm.tokenSavedAt > 0) {
+                    Text(
+                        "Key saved ${DateFormat.getDateInstance().format(Date(vm.tokenSavedAt))}. " +
+                            "Keys last 60 days; the app refreshes it automatically every week.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = vm::refreshTokenNow) { Text("Refresh key now") }
+                    if (!confirmRemove) {
+                        TextButton(onClick = { confirmRemove = true }) { Text("Remove key") }
+                    } else {
+                        Button(onClick = { vm.removeToken(); confirmRemove = false }) { Text("Confirm remove") }
+                    }
+                }
+                Text("Replace with a new key:", style = MaterialTheme.typography.bodySmall)
+            } else {
                 Text(
-                    "Key saved ${DateFormat.getDateInstance().format(Date(vm.tokenSavedAt))}. " +
-                        "Keys last 60 days; the app refreshes it automatically every week.",
-                    style = MaterialTheme.typography.bodySmall,
+                    "Paste the Instagram access token from your Meta developer app " +
+                        "(see SETUP.md in the project). It's checked with Instagram, then " +
+                        "encrypted with the phone's Android Keystore and never leaves this device.",
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = vm::refreshTokenNow) { Text("Refresh key now") }
-                if (!confirmRemove) {
-                    TextButton(onClick = { confirmRemove = true }) { Text("Remove key") }
-                } else {
-                    Button(onClick = { vm.removeToken(); confirmRemove = false }) { Text("Confirm remove") }
-                }
-            }
-            Text("Replace with a new key:", style = MaterialTheme.typography.bodySmall)
-        } else {
-            Text(
-                "Paste the Instagram access token from your Meta developer app " +
-                    "(see SETUP.md in the project). It's checked with Instagram, then " +
-                    "encrypted with the phone's Android Keystore and never leaves this device.",
-                style = MaterialTheme.typography.bodyMedium,
+
+            OutlinedTextField(
+                value = keyInput,
+                onValueChange = { keyInput = it },
+                label = { Text("Access token") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
             )
-        }
+            Button(
+                enabled = keyInput.isNotBlank() && !vm.loading,
+                onClick = { vm.saveToken(keyInput) { ok -> if (ok) keyInput = "" } },
+            ) { Text(if (vm.loading) "Checking…" else "Save key") }
 
-        OutlinedTextField(
-            value = keyInput,
-            onValueChange = { keyInput = it },
-            label = { Text("Access token") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Button(
-            enabled = keyInput.isNotBlank() && !vm.loading,
-            onClick = { vm.saveToken(keyInput) { ok -> if (ok) keyInput = "" } },
-        ) { Text(if (vm.loading) "Checking…" else "Save key") }
-
-        ErrorBanner(vm)
+            ErrorBanner(vm)
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
