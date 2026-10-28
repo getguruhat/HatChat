@@ -21,9 +21,9 @@ You don't need App Review or to publish the app. It stays in development mode, w
 ## 3. Let apps read your messages (Instagram phone app only)
 This switch is **not on instagram.com**. It's only in the Instagram app on your phone, and it may only show up after step 2, once a developer app is connected to your account. Keep the Instagram app installed until this step is done.
 
-In the Instagram app: tap your profile → **☰ menu → Messages and story replies → Message controls → Connected tools → Allow access to messages → On**.
+In the Instagram app: tap your profile → **☰ menu → Messages and story replies → Message requests**, then scroll to the bottom → **Connected tools → Allow access to messages → On**.
 
-If you can't find it, look under **Settings → Privacy → Messages**. Older versions of the app put it there.
+If **Connected tools** isn't there, finish steps 1–2 first and reopen the app. Older versions of the app have it under **Message controls** or **Settings → Privacy → Messages**.
 
 Once it's on, you can uninstall the Instagram app. The setting stays on.
 
