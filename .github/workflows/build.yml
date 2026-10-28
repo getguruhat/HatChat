@@ -39,6 +39,12 @@ jobs:
           HATCHAT_KEYSTORE_PASSWORD: ${{ secrets.HATCHAT_KEYSTORE_PASSWORD }}
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Show signing certificate
+        run: |
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/debug/app-debug.apk | grep -E "DN|SHA-256"
+        shell: bash
+
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk HatChat-${{ github.ref_name == 'main' && github.sha || github.ref_name }}.apk
         shell: bash
