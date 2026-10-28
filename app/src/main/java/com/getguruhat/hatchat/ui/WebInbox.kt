@@ -72,6 +72,7 @@ class WebInbox(
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
                 canGoBack = view.canGoBack()
                 Log.d(TAG, "history ${short(url)}")
+                fitDesktopPage(view)
             }
 
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
@@ -80,6 +81,7 @@ class WebInbox(
 
             override fun onPageFinished(view: WebView, url: String?) {
                 Log.d(TAG, "page done ${short(url)}")
+                fitDesktopPage(view)
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -132,6 +134,15 @@ class WebInbox(
 
     fun goBack() = webView.goBack()
 
+    /**
+     * Desktop sites assume a ~1000px-wide screen, so on a phone they render tiny.
+     * Giving the page a phone-width viewport makes Facebook's responsive desktop
+     * layout reflow to the screen instead (tested: 980px -> ~455px wide).
+     */
+    private fun fitDesktopPage(view: WebView) {
+        if (desktopMode == true) view.evaluateJavascript(FIT_VIEWPORT_JS, null)
+    }
+
     /** Signs out by expiring this service's cookies; the other tab stays signed in. */
     fun signOut() {
         val cookies = CookieManager.getInstance()
@@ -158,6 +169,20 @@ class WebInbox(
 
     companion object {
         private const val TAG = "HatChat"
+        // Adds/overrides the viewport tag and keeps it there if the page swaps <head> nodes.
+        private const val FIT_VIEWPORT_JS = """(function () {
+  var want = 'width=device-width, initial-scale=1';
+  function fit() {
+    var m = document.querySelector('meta[name=viewport]');
+    if (!m) { m = document.createElement('meta'); m.name = 'viewport'; (document.head || document.documentElement).appendChild(m); }
+    if (m.content !== want) m.content = want;
+  }
+  fit();
+  if (!window.__hatchatFit) {
+    window.__hatchatFit = true;
+    new MutationObserver(fit).observe(document.head || document.documentElement, { childList: true });
+  }
+})();"""
         private const val DESKTOP_UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 
