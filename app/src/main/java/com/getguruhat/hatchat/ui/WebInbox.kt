@@ -245,9 +245,9 @@ class WebInbox(
     new MutationObserver(fit).observe(document.head || document.documentElement, { childList: true });
   }
 })();"""
-        // On the inbox screens, Instagram's top-left Back arrow leads to the feed: hide it.
-        // Inside a chat it's kept, since there it returns to the inbox.
-        private const val INSTAGRAM_HIDE_BACK_JS = """(function () {
+        // On the inbox screens: hide Instagram's top-left Back arrow (it leads to the feed;
+        // inside a chat it's kept, since there it returns to the inbox) and the Notes row.
+        private const val INSTAGRAM_JS = """(function () {
   function apply() {
     var inbox = /^\/direct\/(inbox(\/general)?|requests)\/?$/.test(location.pathname);
     document.querySelectorAll('svg[aria-label="Back"]').forEach(function (svg) {
@@ -255,6 +255,17 @@ class WebInbox(
       button.style.visibility = inbox ? 'hidden' : '';
       button.style.pointerEvents = inbox ? 'none' : '';
     });
+    // Notes row: the horizontal list holding "Your note". Hide its outermost wrapper
+    // that still contains only the row (its parent also holds the chat list).
+    var labels = document.querySelectorAll('span');
+    for (var i = 0; i < labels.length; i++) {
+      if (labels[i].childElementCount || labels[i].textContent.trim() !== 'Your note') continue;
+      var row = labels[i].closest('ul');
+      if (!row) break;
+      while (row.parentElement && row.parentElement.childElementCount === 1) row = row.parentElement;
+      row.style.display = inbox ? 'none' : '';
+      break;
+    }
   }
   apply();
   if (!window.__hatchatBack) {
@@ -284,12 +295,14 @@ class WebInbox(
         // - hides the top bar (logo, search, menu, notifications, profile), which only leads out;
         // - on /messages/ shows the chat list full screen (Facebook collapses it to zero height
         //   at phone width, leaving an empty "No chats selected" pane);
-        // - removes the "screen height minus 56px top bar" limits that left a blank strip.
+        // - removes the "screen height minus 56px top bar" limits that left a blank strip,
+        //   and the 2px card insets that showed as gray lines on the sides.
         private const val FACEBOOK_JS = """(function () {
   var css = 'div[role=banner]{display:none!important}' +
     ':root{--header-height:0px!important}' +
     'div:has(> div > [role=main]){height:100vh!important;max-height:none!important}' +
-    'div:has(> [role=main]){height:100%!important;max-height:none!important}' +
+    'div:has(> [role=main]){height:100%!important;max-height:none!important;padding:0!important}' +
+    '[role=main] > div{padding-top:0!important}' +
     'html.hatchat-inbox div:has(> [aria-label="Thread list"]){height:100vh!important;max-height:none!important}' +
     'html.hatchat-inbox [aria-label="Thread list"]{visibility:visible!important;position:absolute!important;inset:0!important;' +
     'width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;z-index:5!important;' +
@@ -306,8 +319,14 @@ class WebInbox(
     var nodes = [].slice.call(main.querySelectorAll('div')).concat(
       [].slice.call(document.querySelectorAll('[aria-label="Thread list"], [aria-label="Thread list"] div')));
     for (var i = 0; i < nodes.length; i++) {
-      var max = parseFloat(getComputedStyle(nodes[i]).maxHeight);
+      var cs = getComputedStyle(nodes[i]);
+      var max = parseFloat(cs.maxHeight);
       if (max && Math.abs(max - target) <= 6) nodes[i].style.setProperty('max-height', 'none', 'important');
+      // The chat "card" sits 2px in with rounded corners, so the gray page shows as side lines.
+      if (cs.marginLeft === '2px' && nodes[i].getBoundingClientRect().width >= window.innerWidth - 8) {
+        nodes[i].style.setProperty('margin', '0', 'important');
+        nodes[i].style.setProperty('border-radius', '0', 'important');
+      }
     }
   }
   fill();
@@ -335,7 +354,7 @@ class WebInbox(
             // Home feed, Explore, the Reels feed and Stories. Single posts and reels
             // that friends send in a chat (/p/…, /reel/…) still open.
             blockedPaths = listOf(Regex("/?"), Regex("/explore(/.*)?"), Regex("/reels/?"), Regex("/stories(/.*)?")),
-            pageScript = INSTAGRAM_HIDE_BACK_JS,
+            pageScript = INSTAGRAM_JS,
             pickFiles = pickFiles,
         )
 
