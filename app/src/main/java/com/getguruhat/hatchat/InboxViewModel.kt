@@ -33,6 +33,8 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
 
     var messengerDesktopMode by mutableStateOf(prefs.getBoolean(PREF_DESKTOP, false)); private set
 
+    var messageAlerts by mutableStateOf(prefs.getBoolean(MessageAlerts.PREF_ENABLED, true)); private set
+
     /** Website mode (default) shows every DM; key mode uses the official API, which Meta restricts. */
     var instagramWebMode by mutableStateOf(prefs.getBoolean(PREF_IG_WEB, true)); private set
 
@@ -165,6 +167,11 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         webInspection = on
         prefs.edit().putBoolean(PREF_INSPECT, on).apply()
         android.webkit.WebView.setWebContentsDebuggingEnabled(on)
+    }
+
+    fun setMessageAlertsEnabled(on: Boolean) {
+        messageAlerts = on
+        prefs.edit().putBoolean(MessageAlerts.PREF_ENABLED, on).apply()
     }
 
     fun setDesktopMode(on: Boolean) {

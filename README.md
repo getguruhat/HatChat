@@ -16,7 +16,7 @@ A small, open-source Android app from [GuruHat](https://github.com/getguruhat) f
 
 | | |
 |---|---|
-| Notifications | No push notifications yet. |
+| Notifications | Alerts for new messages while HatChat runs in the background (no names or text shown). Android may close HatChat after a while; there's no always-on push. |
 | Look and feel | The tabs show Instagram's and Facebook's own websites, so they control the layout. |
 | Key mode (optional) | Meta's API only returns the last 20 messages per chat, allows replies within 24 h, can't start new chats or see groups, and hides chats from non-testers until App Review. |
 

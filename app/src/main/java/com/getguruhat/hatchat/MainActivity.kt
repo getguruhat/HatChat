@@ -1,7 +1,10 @@
 package com.getguruhat.hatchat
 
+import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -10,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -32,7 +36,6 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -52,14 +55,20 @@ class MainActivity : ComponentActivity() {
     private val vm: InboxViewModel by viewModels()
     private var fileCallback: ValueCallback<Array<Uri>>? = null
 
+    // Lives on the activity so a notification tap (onNewIntent) can switch tabs.
+    private var tab by mutableIntStateOf(0)
+
     private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(result.resultCode, result.data))
         fileCallback = null
     }
 
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        tab = savedInstanceState?.getInt(STATE_TAB) ?: tabFrom(intent) ?: 0
 
         val pickFiles = { intent: Intent, callback: ValueCallback<Array<Uri>> ->
             fileCallback?.onReceiveValue(null)
@@ -74,6 +83,10 @@ class MainActivity : ComponentActivity() {
         android.webkit.WebView.setWebContentsDebuggingEnabled(vm.webInspection)
         val instagram = WebInbox.instagram(this, pickFiles)
         val messenger = WebInbox.messenger(this, pickFiles)
+        instagram.onUnreadCount = { MessageAlerts.onUnreadCount(this, MessageAlerts.Service.Instagram, it) }
+        messenger.onUnreadCount = { MessageAlerts.onUnreadCount(this, MessageAlerts.Service.Messenger, it) }
+
+        askForNotificationsOnce()
 
         setContent {
             val dark = isSystemInDarkTheme()
@@ -85,8 +98,6 @@ class MainActivity : ComponentActivity() {
                 else -> lightColorScheme()
             }
             MaterialTheme(colorScheme = colors) {
-                var tab by rememberSaveable { mutableIntStateOf(0) }
-
                 val updates: UpdateViewModel = viewModel()
                 val updateState by updates.state.collectAsStateWithLifecycle()
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { updates.onResume() }
@@ -112,22 +123,69 @@ class MainActivity : ComponentActivity() {
                 ) { padding ->
                     // imePadding shrinks the tab above the keyboard, so the typing box stays visible.
                     Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
-                        when (tab) {
-                            0 -> if (vm.instagramWebMode) {
-                                WebInboxScreen(instagram)
-                            } else {
-                                InstagramScreen(vm, onOpenSettings = { tab = 2 })
+                        // Both web tabs stay loaded (hidden when not selected) so they can
+                        // notice new messages; the other screens draw on top of them.
+                        if (vm.instagramWebMode) WebInboxScreen(instagram, visible = tab == 0)
+                        WebInboxScreen(messenger, vm.messengerDesktopMode, visible = tab == 1)
+                        val overlay = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+                        if (tab == 0 && !vm.instagramWebMode) {
+                            Box(overlay) { InstagramScreen(vm, onOpenSettings = { tab = 2 }) }
+                        }
+                        if (tab == 2) {
+                            Box(overlay) {
+                                SettingsScreen(
+                                    vm,
+                                    onSignOutInstagram = instagram::signOut,
+                                    onClearMessengerLogin = messenger::signOut,
+                                    onAlertsEnabled = ::askForNotifications,
+                                )
                             }
-                            1 -> WebInboxScreen(messenger, vm.messengerDesktopMode)
-                            else -> SettingsScreen(
-                                vm,
-                                onSignOutInstagram = instagram::signOut,
-                                onClearMessengerLogin = messenger::signOut,
-                            )
                         }
                     }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        tabFrom(intent)?.let { tab = it }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        MessageAlerts.onAppVisible(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        MessageAlerts.appVisible = false
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STATE_TAB, tab)
+    }
+
+    private fun tabFrom(intent: Intent?) =
+        intent?.getIntExtra(MessageAlerts.EXTRA_TAB, -1)?.takeIf { it >= 0 }
+
+    /** Android 13+ needs permission to show notifications; ask on first launch only. */
+    private fun askForNotificationsOnce() {
+        val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        if (prefs.getBoolean(PREF_ASKED_NOTIFICATIONS, false)) return
+        prefs.edit().putBoolean(PREF_ASKED_NOTIFICATIONS, true).apply()
+        askForNotifications()
+    }
+
+    private fun askForNotifications() {
+        if (Build.VERSION.SDK_INT >= 33 && !MessageAlerts.canNotify(this)) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    private companion object {
+        const val STATE_TAB = "tab"
+        const val PREF_ASKED_NOTIFICATIONS = "asked_notifications"
     }
 }

@@ -34,7 +34,12 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-fun SettingsScreen(vm: InboxViewModel, onSignOutInstagram: () -> Unit, onClearMessengerLogin: () -> Unit) {
+fun SettingsScreen(
+    vm: InboxViewModel,
+    onSignOutInstagram: () -> Unit,
+    onClearMessengerLogin: () -> Unit,
+    onAlertsEnabled: () -> Unit,
+) {
     var keyInput by remember { mutableStateOf("") }
     var confirmRemove by remember { mutableStateOf(false) }
     var messengerCleared by remember { mutableStateOf(false) }
@@ -125,6 +130,24 @@ fun SettingsScreen(vm: InboxViewModel, onSignOutInstagram: () -> Unit, onClearMe
             Text("Sign out of Messenger")
         }
         if (messengerCleared) Text("Signed out.", style = MaterialTheme.typography.bodySmall)
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        Text("Notifications", style = MaterialTheme.typography.titleLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Message alerts")
+                Text(
+                    "Notifies you of new Instagram and Messenger messages while HatChat is running in the " +
+                        "background. Android may close HatChat after a while; open it again to keep alerts coming. " +
+                        "Alerts never show names or message text.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(
+                checked = vm.messageAlerts,
+                onCheckedChange = { on -> vm.setMessageAlertsEnabled(on); if (on) onAlertsEnabled() },
+            )
+        }
 
         if (vm.hasToken && !vm.instagramWebMode) {
             HorizontalDivider(Modifier.padding(vertical = 8.dp))

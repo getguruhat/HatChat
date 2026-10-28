@@ -51,6 +51,9 @@ class WebInbox(
     private val pickFiles: (Intent, ValueCallback<Array<Uri>>) -> Unit,
 ) {
     var canGoBack by mutableStateOf(false); private set
+
+    /** Receives the unread count from the page title ("(2) Instagram" -> 2), for message alerts. */
+    var onUnreadCount: ((Int) -> Unit)? = null
     var inThread by mutableStateOf(false); private set
 
     // Facebook opens straight into the most recent chat; go back to the list once if that
@@ -130,6 +133,11 @@ class WebInbox(
             }
         }
         webChromeClient = object : WebChromeClient() {
+            override fun onReceivedTitle(view: WebView, title: String?) {
+                val count = title?.let { UNREAD_TITLE.find(it) }?.groupValues?.get(1)?.toIntOrNull() ?: 0
+                onUnreadCount?.invoke(count)
+            }
+
             override fun onConsoleMessage(message: ConsoleMessage): Boolean {
                 if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
                     Log.w(TAG, "console: ${message.message().take(200)}")
@@ -231,6 +239,7 @@ class WebInbox(
 
     companion object {
         private const val TAG = "HatChat"
+        private val UNREAD_TITLE = Regex("^\\((\\d+)\\)")
         // Adds/overrides the viewport tag and keeps it there if the page swaps <head> nodes.
         private const val FIT_VIEWPORT_JS = """(function () {
   var want = 'width=device-width, initial-scale=1';
@@ -392,9 +401,13 @@ class WebInbox(
     }
 }
 
+/**
+ * Both tabs stay composed (the hidden one INVISIBLE, not removed) so each page keeps
+ * running in the background and can report new messages.
+ */
 @Composable
-fun WebInboxScreen(web: WebInbox, desktopMode: Boolean = false) {
-    BackHandler(enabled = web.canGoBack || web.inThread) { web.goBack() }
+fun WebInboxScreen(web: WebInbox, desktopMode: Boolean = false, visible: Boolean = true) {
+    BackHandler(enabled = visible && (web.canGoBack || web.inThread)) { web.goBack() }
     AndroidView(
         factory = {
             (web.webView.parent as? ViewGroup)?.removeView(web.webView)
@@ -403,7 +416,10 @@ fun WebInboxScreen(web: WebInbox, desktopMode: Boolean = false) {
             web.webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             web.webView
         },
-        update = { web.load(desktopMode) },
+        update = {
+            web.load(desktopMode)
+            it.visibility = if (visible) android.view.View.VISIBLE else android.view.View.INVISIBLE
+        },
         modifier = Modifier.fillMaxSize(),
     )
 }
