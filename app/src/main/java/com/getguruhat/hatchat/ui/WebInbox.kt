@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.graphics.Bitmap
 import android.util.Log
+import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
 import android.webkit.RenderProcessGoneDetail
@@ -183,7 +184,13 @@ class WebInbox(
 fun WebInboxScreen(web: WebInbox, desktopMode: Boolean = false) {
     BackHandler(enabled = web.canGoBack) { web.goBack() }
     AndroidView(
-        factory = { (web.webView.parent as? android.view.ViewGroup)?.removeView(web.webView); web.webView },
+        factory = {
+            (web.webView.parent as? ViewGroup)?.removeView(web.webView)
+            // AndroidView defaults to WRAP_CONTENT, which makes CSS viewport units (100vh)
+            // resolve to 0 — Instagram's page then collapses to nothing after loading.
+            web.webView.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            web.webView
+        },
         update = { web.load(desktopMode) },
         modifier = Modifier.fillMaxSize(),
     )
