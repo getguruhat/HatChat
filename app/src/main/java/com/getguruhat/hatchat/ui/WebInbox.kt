@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.graphics.Bitmap
 import android.util.Log
 import android.view.ViewGroup
@@ -61,6 +62,8 @@ class WebInbox(
         settings.domStorageEnabled = true
         settings.mediaPlaybackRequiresUserGesture = true
         settings.setSupportMultipleWindows(false)
+        // In dark mode, let WebView darken pages that have no dark style of their own.
+        if (Build.VERSION.SDK_INT >= 33) settings.isAlgorithmicDarkeningAllowed = true
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
 

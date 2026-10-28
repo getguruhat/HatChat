@@ -1,3 +1,5 @@
 <resources>
-    <style name="Theme.HatChat" parent="android:Theme.Material.NoActionBar" />
+    <!-- Light by default; values-night switches to dark. Web pages read this to pick
+         light or dark (prefers-color-scheme), so the tabs follow the phone's theme. -->
+    <style name="Theme.HatChat" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
