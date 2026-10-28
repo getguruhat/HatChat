@@ -236,13 +236,16 @@ class WebInbox(
   var want = 'width=device-width, initial-scale=1';
   function fit() {
     var m = document.querySelector('meta[name=viewport]');
-    if (!m) { m = document.createElement('meta'); m.name = 'viewport'; (document.head || document.documentElement).appendChild(m); }
+    var head = document.head || document.documentElement;
+    if (!m && head) { m = document.createElement('meta'); m.name = 'viewport'; head.appendChild(m); }
+    if (!m) return;
     if (m.content !== want) m.content = want;
   }
   fit();
-  if (!window.__hatchatFit) {
+  var target = document.head || document.documentElement;
+  if (!window.__hatchatFit && target) {
+    new MutationObserver(fit).observe(target, { childList: true });
     window.__hatchatFit = true;
-    new MutationObserver(fit).observe(document.head || document.documentElement, { childList: true });
   }
 })();"""
         // On the inbox screens: hide Instagram's top-left Back arrow (it leads to the feed;
@@ -268,14 +271,16 @@ class WebInbox(
     }
   }
   apply();
-  if (!window.__hatchatBack) {
-    window.__hatchatBack = true;
+  // Only mark as set up once the observer is attached; an early run on a blank page retries later.
+  var target = document.body || document.documentElement;
+  if (!window.__hatchatIg && target) {
     var queued = false;
     new MutationObserver(function () {
       if (queued) return;
       queued = true;
       requestAnimationFrame(function () { queued = false; apply(); });
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    }).observe(target, { childList: true, subtree: true });
+    window.__hatchatIg = true;
   }
 })();"""
         private const val THREAD_BACK_JS = """(function () {
@@ -308,7 +313,9 @@ class WebInbox(
     'width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;z-index:5!important;' +
     'background:var(--web-wash,#fff)!important}';
   var s = document.getElementById('hatchat-fb');
-  if (!s) { s = document.createElement('style'); s.id = 'hatchat-fb'; (document.head || document.documentElement).appendChild(s); }
+  var head = document.head || document.documentElement;
+  if (!head) return;
+  if (!s) { s = document.createElement('style'); s.id = 'hatchat-fb'; head.appendChild(s); }
   if (s.textContent !== css) s.textContent = css;
 
   function fill() {
@@ -330,16 +337,17 @@ class WebInbox(
     }
   }
   fill();
-  if (!window.__hatchatFb) {
-    window.__hatchatFb = true;
+  var target = document.body || document.documentElement;
+  if (!window.__hatchatFb && target) {
     var last = 0, timer = null;
     var run = function () {
       var now = Date.now();
       if (now - last > 400) { last = now; fill(); }
       else if (!timer) timer = setTimeout(function () { timer = null; last = Date.now(); fill(); }, 400);
     };
-    new MutationObserver(run).observe(document.body || document.documentElement, { childList: true, subtree: true });
+    new MutationObserver(run).observe(target, { childList: true, subtree: true });
     window.addEventListener('resize', run);
+    window.__hatchatFb = true;
   }
 })();"""
         private const val DESKTOP_UA =
