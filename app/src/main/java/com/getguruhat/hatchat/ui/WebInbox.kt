@@ -46,9 +46,16 @@ class WebInbox(
     private val allowedPaths: List<Regex>? = null,
     /** Extra script run on every page/navigation, e.g. to hide buttons that lead out of the inbox. */
     private val pageScript: String? = null,
+    /** Chat pages where the phone's back button should use the site's own Back arrow (see [THREAD_BACK_JS]). */
+    private val threadPaths: Regex? = null,
     private val pickFiles: (Intent, ValueCallback<Array<Uri>>) -> Unit,
 ) {
     var canGoBack by mutableStateOf(false); private set
+    var inThread by mutableStateOf(false); private set
+
+    // Facebook opens straight into the most recent chat; go back to the list once if that
+    // happens within a few seconds of loading (later chats are ones you opened yourself).
+    private var openListUntil = 0L
 
     // The WebView user agent marks itself as an in-app browser ("; wv"), which Meta
     // sometimes refuses to log in. Present as regular mobile Chrome instead.
@@ -84,6 +91,12 @@ class WebInbox(
 
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
                 canGoBack = view.canGoBack()
+                val path = url?.let { Uri.parse(it).path }.orEmpty()
+                inThread = threadPaths?.matches(path) == true
+                if (inThread && System.currentTimeMillis() < openListUntil) {
+                    openListUntil = 0L
+                    view.evaluateJavascript(START_ON_LIST_JS, null)
+                }
                 Log.d(TAG, "history ${short(url)}")
                 // In-page navigation (pushState) never reaches shouldOverrideUrlLoading.
                 if (url != null && isBlocked(Uri.parse(url))) {
@@ -147,10 +160,20 @@ class WebInbox(
             builtInZoomControls = desktop
             displayZoomControls = false
         }
+        if (threadPaths != null) openListUntil = System.currentTimeMillis() + 8_000
         webView.loadUrl(startUrl)
     }
 
-    fun goBack() = webView.goBack()
+    /** Back inside a chat taps the site's own Back arrow; otherwise normal web history. */
+    fun goBack() {
+        if (!inThread) {
+            webView.goBack()
+            return
+        }
+        webView.evaluateJavascript(THREAD_BACK_JS) { clicked ->
+            if (clicked != "true" && webView.canGoBack()) webView.goBack()
+        }
+    }
 
     /**
      * Desktop sites assume a ~1000px-wide screen, so on a phone they render tiny.
@@ -244,6 +267,19 @@ class WebInbox(
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
 })();"""
+        private const val THREAD_BACK_JS = """(function () {
+  var b = document.querySelector('[role=button][aria-label="Back"]');
+  if (b) { b.click(); return true; }
+  return false;
+})()"""
+        // Same as THREAD_BACK_JS, but waits up to 5 s for the chat header to render.
+        private const val START_ON_LIST_JS = """(function () {
+  var tries = 0;
+  (function attempt() {
+    var b = document.querySelector('[role=button][aria-label="Back"]');
+    if (b) b.click(); else if (++tries < 25) setTimeout(attempt, 200);
+  })();
+})()"""
         // Fits Facebook's desktop Messenger to a phone:
         // - hides the top bar (logo, search, menu, notifications, profile), which only leads out;
         // - on /messages/ shows the chat list full screen (Facebook collapses it to zero height
@@ -317,6 +353,7 @@ class WebInbox(
                 "/privacy/consent(/.*)?", "/cookie(/.*)?", "/confirmemail(\\.php)?", "/device-based(/.*)?",
             ).map(::Regex),
             pageScript = FACEBOOK_JS,
+            threadPaths = Regex("/messages(/e2ee)?/t/.*"),
             pickFiles = pickFiles,
         )
     }
@@ -324,7 +361,7 @@ class WebInbox(
 
 @Composable
 fun WebInboxScreen(web: WebInbox, desktopMode: Boolean = false) {
-    BackHandler(enabled = web.canGoBack) { web.goBack() }
+    BackHandler(enabled = web.canGoBack || web.inThread) { web.goBack() }
     AndroidView(
         factory = {
             (web.webView.parent as? ViewGroup)?.removeView(web.webView)
