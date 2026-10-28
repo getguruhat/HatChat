@@ -301,7 +301,7 @@ class WebInbox(
         // - on /messages/ shows the chat list full screen (Facebook collapses it to zero height
         //   at phone width, leaving an empty "No chats selected" pane);
         // - removes the "screen height minus 56px top bar" limits that left a blank strip,
-        //   and the 2px card insets that showed as gray lines on the sides.
+        //   and the 2px card insets and side borders that showed as gray lines on the sides.
         private const val FACEBOOK_JS = """(function () {
   var css = 'div[role=banner]{display:none!important}' +
     ':root{--header-height:0px!important}' +
@@ -333,6 +333,12 @@ class WebInbox(
       if (cs.marginLeft === '2px' && nodes[i].getBoundingClientRect().width >= window.innerWidth - 8) {
         nodes[i].style.setProperty('margin', '0', 'important');
         nodes[i].style.setProperty('border-radius', '0', 'important');
+      }
+      // The message area under the chat header has 2px side borders (gray in dark mode).
+      if (cs.borderLeftWidth === '2px' && cs.borderRightWidth === '2px' &&
+          nodes[i].getBoundingClientRect().width >= window.innerWidth - 8) {
+        nodes[i].style.setProperty('border-left-width', '0', 'important');
+        nodes[i].style.setProperty('border-right-width', '0', 'important');
       }
     }
   }
