@@ -39,6 +39,10 @@ class WebInbox(
     private val startUrl: String,
     private val hosts: List<String>,
     private val signOutHosts: List<String>,
+    /** Paths that leave the inbox (feed, stories…); visiting one sends you back to [startUrl]. */
+    private val blockedPaths: List<Regex> = emptyList(),
+    /** Extra script run on every page/navigation, e.g. to hide buttons that lead out of the inbox. */
+    private val pageScript: String? = null,
     private val pickFiles: (Intent, ValueCallback<Array<Uri>>) -> Unit,
 ) {
     var canGoBack by mutableStateOf(false); private set
@@ -61,7 +65,10 @@ class WebInbox(
         webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
-                if (uri.scheme == "https" && isOwnHost(uri.host)) return false
+                if (uri.scheme == "https" && isOwnHost(uri.host)) {
+                    if (isBlocked(uri)) { view.loadUrl(startUrl); return true }
+                    return false
+                }
                 // Outside links open in the real browser; app deep links (fb://, intent://) are dropped.
                 if (uri.scheme == "http" || uri.scheme == "https") {
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
@@ -72,7 +79,13 @@ class WebInbox(
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
                 canGoBack = view.canGoBack()
                 Log.d(TAG, "history ${short(url)}")
-                fitDesktopPage(view)
+                // In-page navigation (pushState) never reaches shouldOverrideUrlLoading.
+                if (url != null && isBlocked(Uri.parse(url))) {
+                    Log.d(TAG, "blocked ${short(url)}, back to inbox")
+                    view.loadUrl(startUrl)
+                    return
+                }
+                runPageScripts(view)
             }
 
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
@@ -81,7 +94,7 @@ class WebInbox(
 
             override fun onPageFinished(view: WebView, url: String?) {
                 Log.d(TAG, "page done ${short(url)}")
-                fitDesktopPage(view)
+                runPageScripts(view)
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
@@ -139,9 +152,12 @@ class WebInbox(
      * Giving the page a phone-width viewport makes Facebook's responsive desktop
      * layout reflow to the screen instead (tested: 980px -> ~455px wide).
      */
-    private fun fitDesktopPage(view: WebView) {
+    private fun runPageScripts(view: WebView) {
         if (desktopMode == true) view.evaluateJavascript(FIT_VIEWPORT_JS, null)
+        pageScript?.let { view.evaluateJavascript(it, null) }
     }
+
+    private fun isBlocked(uri: Uri) = blockedPaths.any { it.matches(uri.path ?: "/") }
 
     /** Signs out by expiring this service's cookies; the other tab stays signed in. */
     fun signOut() {
@@ -183,6 +199,28 @@ class WebInbox(
     new MutationObserver(fit).observe(document.head || document.documentElement, { childList: true });
   }
 })();"""
+        // On the inbox screens, Instagram's top-left Back arrow leads to the feed: hide it.
+        // Inside a chat it's kept, since there it returns to the inbox.
+        private const val INSTAGRAM_HIDE_BACK_JS = """(function () {
+  function apply() {
+    var inbox = /^\/direct\/(inbox(\/general)?|requests)\/?$/.test(location.pathname);
+    document.querySelectorAll('svg[aria-label="Back"]').forEach(function (svg) {
+      var button = svg.closest('[role=button],a,button') || svg;
+      button.style.visibility = inbox ? 'hidden' : '';
+      button.style.pointerEvents = inbox ? 'none' : '';
+    });
+  }
+  apply();
+  if (!window.__hatchatBack) {
+    window.__hatchatBack = true;
+    var queued = false;
+    new MutationObserver(function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; apply(); });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+})();"""
         private const val DESKTOP_UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 
@@ -192,6 +230,10 @@ class WebInbox(
             // facebook.com is allowed so "Log in with Facebook" works.
             hosts = listOf("instagram.com", "cdninstagram.com", "facebook.com", "fbcdn.net"),
             signOutHosts = listOf("instagram.com"),
+            // Home feed, Explore, the Reels feed and Stories. Single posts and reels
+            // that friends send in a chat (/p/…, /reel/…) still open.
+            blockedPaths = listOf(Regex("/?"), Regex("/explore(/.*)?"), Regex("/reels/?"), Regex("/stories(/.*)?")),
+            pageScript = INSTAGRAM_HIDE_BACK_JS,
             pickFiles = pickFiles,
         )
 
