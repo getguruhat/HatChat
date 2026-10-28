@@ -12,7 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -109,7 +111,8 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                 ) { padding ->
-                    Box(Modifier.fillMaxSize().padding(padding)) {
+                    // imePadding shrinks the tab above the keyboard, so the typing box stays visible.
+                    Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
                         when (tab) {
                             0 -> if (vm.instagramWebMode) {
                                 WebInboxScreen(instagram)
