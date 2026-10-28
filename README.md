@@ -1,3 +1,5 @@
+<img src="docs/images/icon.svg" width="96" alt="HatChat icon">
+
 # HatChat
 
 A small, open-source Android app from [GuruHat](https://github.com/getguruhat) for your Instagram DMs and Facebook Messenger chats, so you can uninstall the official apps.
