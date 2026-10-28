@@ -170,7 +170,12 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         val client = api ?: return
         diagnostics = "Asking Instagram…"
         viewModelScope.launch {
-            diagnostics = "HatChat ${BuildConfig.VERSION_NAME}\n\n" + client.diagnostics()
+            val report = try {
+                client.diagnostics()
+            } catch (e: Exception) {
+                "Diagnostics failed: ${e.javaClass.simpleName}: ${e.message}"
+            }
+            diagnostics = "HatChat ${BuildConfig.VERSION_NAME}\n\n$report"
         }
     }
 

@@ -5,26 +5,26 @@
       <stop offset="0.5" stop-color="#2F4BFF"/>
       <stop offset="1" stop-color="#7B2FF7"/>
     </linearGradient>
-    <linearGradient id="band" x1="33" y1="0" x2="75" y2="0" gradientUnits="userSpaceOnUse">
+    <linearGradient id="band" x1="38" y1="0" x2="70" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#14C2FF"/>
       <stop offset="1" stop-color="#2F5BFF"/>
     </linearGradient>
   </defs>
   <rect width="108" height="108" rx="24" fill="url(#bg)"/>
-  <g transform="translate(54 57) scale(1.12) translate(-54 -57)">
   <!-- brim shadow -->
-  <path fill="#B9BEF5" d="M28,64.6 A26,9 0 1,0 80,64.6 A26,9 0 1,0 28,64.6 Z"/>
-  <path fill="#B9BEF5" d="M58,71.6 C57,77.6 54,81.6 51,84.6 C58,83.6 64,78.6 67,71.6 Z"/>
+  <path fill="#B9BEF5" d="M26,69.6 C26,64.6 36,62.6 54,62.6 C72,62.6 82,64.6 82,69.6 C82,74.6 70,77.6 54,77.6 C38,77.6 26,74.6 26,69.6 Z"/>
+  <path fill="#B9BEF5" d="M58,75.6 C57,80.6 54,84.1 51,87.1 C58,86.1 64,81.6 67,75.6 Z"/>
   <!-- brim + speech tail -->
-  <path fill="#FFFFFF" d="M28,63 A26,9 0 1,0 80,63 A26,9 0 1,0 28,63 Z"/>
-  <path fill="#FFFFFF" d="M58,70 C57,76 54,80 51,83 C58,82 64,77 67,70 Z"/>
-  <!-- crown -->
-  <path fill="#FFFFFF" d="M33,60 C33,42 38,32 54,31 C70,30 75,42 75,60 Q54,65 33,60 Z"/>
+  <path fill="#FFFFFF" d="M26,68 C26,63 36,61 54,61 C72,61 82,63 82,68 C82,73 70,76 54,76 C38,76 26,73 26,68 Z"/>
+  <path fill="#FFFFFF" d="M58,74 C57,79 54,82.5 51,85.5 C58,84.5 64,80 67,74 Z"/>
+  <!-- crown: tall, flaring slightly toward the top -->
+  <path fill="#FFFFFF" d="M36.5,27 L39,66 Q54,70 69,66 L71.5,27 Z"/>
+  <!-- crown top -->
+  <path fill="#DDE1FF" d="M36.5,27 A17.5,4.2 0 1,0 71.5,27 A17.5,4.2 0 1,0 36.5,27 Z"/>
   <!-- band -->
-  <path fill="url(#band)" d="M33.4,51 Q54,55.5 74.6,51 L75,59.5 Q54,65 33,59.5 Z"/>
+  <path fill="url(#band)" d="M38.3,55 Q54,58.5 69.7,55 L70.2,63.5 Q54,67.5 37.8,63.5 Z"/>
   <!-- chat dots -->
-  <circle cx="45" cy="42.5" r="3.2" fill="#2F5BFF"/>
+  <circle cx="46" cy="42" r="3.2" fill="#2F5BFF"/>
   <circle cx="54" cy="42" r="3.2" fill="#2F5BFF"/>
-  <circle cx="63" cy="42.5" r="3.2" fill="#2F5BFF"/>
-  </g>
+  <circle cx="62" cy="42" r="3.2" fill="#2F5BFF"/>
 </svg>

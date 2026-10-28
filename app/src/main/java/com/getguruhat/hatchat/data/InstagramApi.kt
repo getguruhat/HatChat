@@ -1,5 +1,6 @@
 package com.getguruhat.hatchat.data
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -62,7 +63,12 @@ class InstagramApi(private val token: String) {
             val json = try {
                 get("/me/conversations", params + listOfNotNull(after?.let { "after" to it }))
             } catch (e: ApiException) {
-                if (page > 0 || "fields" !in params) throw e
+                // Later pages sometimes fail with Instagram's generic error; keep what we have.
+                if (page > 0) {
+                    Log.w(TAG, "conversations page ${page + 1} failed, keeping ${items.size}: ${e.message}")
+                    break
+                }
+                if ("fields" !in params) throw e
                 // Fall back to the documented minimal call if `participants` is rejected.
                 params = params - "fields"
                 get("/me/conversations", params)
@@ -194,7 +200,7 @@ class InstagramApi(private val token: String) {
         }
         val conn = URL("${base(versioned)}$path?$query").openConnection() as HttpURLConnection
         conn.requestMethod = "GET"
-        read(conn)
+        read(conn, "GET $path ${params.keys.joinToString(",")}")
     }
 
     private suspend fun post(path: String, body: JSONObject): JSONObject = withContext(Dispatchers.IO) {
@@ -204,10 +210,14 @@ class InstagramApi(private val token: String) {
         conn.setRequestProperty("Authorization", "Bearer $token")
         conn.setRequestProperty("Content-Type", "application/json")
         conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
-        read(conn)
+        read(conn, "POST $path")
     }
 
-    private fun read(conn: HttpURLConnection): JSONObject {
+    /**
+     * Logs go to logcat (`adb logcat -s HatChat`): the request path, status and size,
+     * plus Instagram's full error on failures. Never the key or message text.
+     */
+    private fun read(conn: HttpURLConnection, label: String): JSONObject {
         conn.connectTimeout = 15_000
         conn.readTimeout = 20_000
         try {
@@ -216,8 +226,19 @@ class InstagramApi(private val token: String) {
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             val json = if (text.isBlank()) JSONObject() else JSONObject(text)
             json.optJSONObject("error")?.let { err ->
-                throw ApiException(err.optString("message", "Instagram error"), err.optInt("code"))
+                Log.w(TAG, "$label -> HTTP $code ${err.toString().replace(token, "<key hidden>")}")
+                val detail = listOfNotNull(
+                    err.optInt("code").takeIf { it != 0 }?.let { "code $it" },
+                    err.optInt("error_subcode").takeIf { it != 0 }?.let { "subcode $it" },
+                    err.optString("type").takeIf { it.isNotEmpty() },
+                    err.optString("fbtrace_id").takeIf { it.isNotEmpty() }?.let { "trace $it" },
+                ).joinToString(", ")
+                throw ApiException(
+                    err.optString("message", "Instagram error") + if (detail.isNotEmpty()) " ($detail)" else "",
+                    err.optInt("code"),
+                )
             }
+            Log.d(TAG, "$label -> HTTP $code, ${json.optJSONArray("data")?.length()?.let { "$it item(s)" } ?: "${text.length} bytes"}")
             if (code !in 200..299) throw ApiException("HTTP $code", code)
             return json
         } finally {
@@ -233,6 +254,7 @@ class InstagramApi(private val token: String) {
         const val HOST = "https://graph.instagram.com"
         const val VERSION = "v26.0"
         private const val MAX_PAGES = 10
+        private const val TAG = "HatChat"
     }
 }
 

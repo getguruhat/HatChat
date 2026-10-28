@@ -34,6 +34,17 @@ The APK is built by GitHub Actions. Nothing is needed on your computer.
 
 To build locally instead, you need JDK 17 and the Android SDK, then run `./gradlew assembleDebug`.
 
+## Debugging
+
+With the phone connected by USB (USB debugging on), you only need `adb`, no compiler:
+
+```bash
+adb install -r HatChat-v0.1.5.apk   # install a build downloaded from Releases
+adb logcat -s HatChat               # live API log: paths, status codes, Instagram's errors
+```
+
+The log never contains your key or message text. **Settings → Run diagnostics** shows the same information on the phone.
+
 ## Project layout
 
 ```
