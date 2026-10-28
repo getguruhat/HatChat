@@ -56,6 +56,12 @@ jobs:
         run: cp app/build/outputs/apk/release/app-release.apk HatChat-${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || github.sha }}.apk
         shell: bash
 
+      # A fixed name too, so https://github.com/getguruhat/HatChat/releases/latest/download/HatChat.apk
+      # always points at the newest release (used by guruhat.com's download link).
+      - name: Stable APK name
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: cp HatChat-${{ github.ref_name }}.apk HatChat.apk
+
       - uses: actions/upload-artifact@v7
         with:
           name: HatChat-apk
@@ -65,5 +71,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
-          files: HatChat-*.apk
+          files: |
+            HatChat-*.apk
+            HatChat.apk
           generate_release_notes: true
