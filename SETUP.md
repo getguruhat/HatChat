@@ -23,6 +23,14 @@ This switch is **not on instagram.com**. It's only in the Instagram app on your 
 
 In the Instagram app: tap your profile → **☰ menu → Messages and story replies → Message requests**, then scroll to the bottom → **Connected tools → Allow access to messages → On**.
 
+<p>
+  <img src="docs/images/instagram-messages-settings.webp" alt="Messages and story replies screen: tap Message requests" width="260">
+  &nbsp;
+  <img src="docs/images/instagram-connected-tools.webp" alt="Message requests screen with Connected tools, Allow access to messages switched on" width="260">
+</p>
+
+*Left: tap **Message requests**. Right: **Allow access to messages** switched on (the knob sits on the right).*
+
 If **Connected tools** isn't there, finish steps 1–2 first and reopen the app. Older versions of the app have it under **Message controls** or **Settings → Privacy → Messages**.
 
 Once it's on, you can uninstall the Instagram app. The setting stays on.
