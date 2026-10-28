@@ -130,7 +130,7 @@ class InstagramApi(private val token: String) {
             "/me/conversations" to mapOf("platform" to "instagram"),
             "/me/conversations" to mapOf("platform" to "instagram", "fields" to "participants,updated_time"),
         )
-        return calls.joinToString("\n\n") { (path, params) ->
+        return calls.map { (path, params) ->
             val label = "GET $path?" + params.entries.joinToString("&") { "${it.key}=${it.value}" }
             val body = try {
                 get(path, params).toString(2)
@@ -140,7 +140,8 @@ class InstagramApi(private val token: String) {
                 "ERROR: ${e.message}"
             }
             "$label\n$body"
-        }.replace(token, "<key hidden>")
+        }.joinToString("\n\n")
+            .replace(token, "<key hidden>")
             .replace(Regex("access_token=[^&\"\\s]+"), "access_token=<key hidden>")
     }
 
