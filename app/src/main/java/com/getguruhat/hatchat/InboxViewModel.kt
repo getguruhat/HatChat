@@ -152,7 +152,7 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setInstagramWebMode(on: Boolean) {
+    fun useInstagramWebsite(on: Boolean) {
         instagramWebMode = on
         prefs.edit().putBoolean(PREF_IG_WEB, on).apply()
         if (!on && conversations.isEmpty()) loadInbox()

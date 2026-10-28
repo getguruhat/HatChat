@@ -55,7 +55,7 @@ fun SettingsScreen(vm: InboxViewModel, onSignOutInstagram: () -> Unit, onClearMe
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            Switch(checked = vm.instagramWebMode, onCheckedChange = vm::setInstagramWebMode)
+            Switch(checked = vm.instagramWebMode, onCheckedChange = vm::useInstagramWebsite)
         }
         if (vm.instagramWebMode) {
             OutlinedButton(onClick = { onSignOutInstagram(); instagramCleared = true }) {
