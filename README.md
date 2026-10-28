@@ -4,22 +4,21 @@
 
 A small, open-source Android app from [GuruHat](https://github.com/getguruhat) for your Instagram DMs and Facebook Messenger chats, so you can uninstall the official apps.
 
-- **Instagram tab:** reads and answers DMs through Meta's **official** Instagram API. Needs an Instagram **Creator or Business** account and an access key you generate yourself (see [SETUP.md](SETUP.md)).
-- **Messenger tab:** Facebook's own web inbox (`facebook.com/messages`) inside the app. You sign in on Facebook's real page.
-- **Your key stays on your phone.** It's encrypted with an AES-256 key held in the Android Keystore. Backups are turned off, and the app has no server and no analytics. The only network code is [`InstagramApi.kt`](app/src/main/java/com/getguruhat/hatchat/data/InstagramApi.kt).
+- **Instagram tab:** Instagram's own DM website (`instagram.com/direct/inbox`) inside the app. All chats, history, groups, photos and voice notes. You sign in on Instagram's real login page; HatChat never sees your password.
+- **Messenger tab:** Facebook's own web inbox (`facebook.com/messages`), the same way.
+- **No feed, no Reels.** Each tab opens straight to your messages.
+- **Optional key mode:** Creator and Business accounts can use Meta's official Instagram API instead (Settings → turn off *Use Instagram website*, then see [SETUP.md](SETUP.md)). Meta only shows chats with your app's testers until the app passes App Review, so most people should keep website mode.
+- **Private by design:** no server and no analytics. Logins stay in the app's private storage, and the optional API key is encrypted with the Android Keystore.
 
 > Not affiliated with, endorsed by, or connected to Meta, Instagram, or Facebook.
 
-## What it can't do (Meta's limits, not ours)
+## Limits
 
 | | |
 |---|---|
-| Instagram history | Only the **20 most recent messages** of each chat. |
-| Replying late | Replies are allowed only within **24 hours** of the other person's last message. Ticking "Human Agent" extends that to 7 days. |
-| Starting new chats | You can't DM someone who hasn't messaged you first. |
-| Group chats | Not available through the API. |
-| Notifications | No push notifications yet. Instagram chats refresh every 15 s while open. |
-| Feed / Reels / Stories | Not included, on purpose. |
+| Notifications | No push notifications yet. |
+| Look and feel | The tabs show Instagram's and Facebook's own websites, so they control the layout. |
+| Key mode (optional) | Meta's API only returns the last 20 messages per chat, allows replies within 24 h, can't start new chats or see groups, and hides chats from non-testers until App Review. |
 
 ## Download / build
 

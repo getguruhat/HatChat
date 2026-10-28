@@ -34,17 +34,36 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-fun SettingsScreen(vm: InboxViewModel, onClearMessengerLogin: () -> Unit) {
+fun SettingsScreen(vm: InboxViewModel, onSignOutInstagram: () -> Unit, onClearMessengerLogin: () -> Unit) {
     var keyInput by remember { mutableStateOf("") }
     var confirmRemove by remember { mutableStateOf(false) }
     var messengerCleared by remember { mutableStateOf(false) }
+    var instagramCleared by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Instagram key", style = MaterialTheme.typography.titleLarge)
+        Text("Instagram", style = MaterialTheme.typography.titleLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Use Instagram website")
+                Text(
+                    "Shows all your DMs by signing in on instagram.com. Turn off to use a " +
+                        "Meta developer key instead (business accounts with App Review only).",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(checked = vm.instagramWebMode, onCheckedChange = vm::setInstagramWebMode)
+        }
+        if (vm.instagramWebMode) {
+            OutlinedButton(onClick = { onSignOutInstagram(); instagramCleared = true }) {
+                Text("Sign out of Instagram")
+            }
+            if (instagramCleared) Text("Signed out.", style = MaterialTheme.typography.bodySmall)
+        } else {
+        Text("Instagram key", style = MaterialTheme.typography.titleMedium)
 
         if (vm.hasToken) {
             Text("Connected" + (vm.me?.username?.let { " as @$it" } ?: ""))
@@ -87,6 +106,7 @@ fun SettingsScreen(vm: InboxViewModel, onClearMessengerLogin: () -> Unit) {
         ) { Text(if (vm.loading) "Checking…" else "Save key") }
 
         ErrorBanner(vm)
+        }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
@@ -106,7 +126,7 @@ fun SettingsScreen(vm: InboxViewModel, onClearMessengerLogin: () -> Unit) {
         }
         if (messengerCleared) Text("Signed out.", style = MaterialTheme.typography.bodySmall)
 
-        if (vm.hasToken) {
+        if (vm.hasToken && !vm.instagramWebMode) {
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             Text("Diagnostics", style = MaterialTheme.typography.titleLarge)
             Text(

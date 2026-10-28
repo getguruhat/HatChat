@@ -33,6 +33,9 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
 
     var messengerDesktopMode by mutableStateOf(prefs.getBoolean(PREF_DESKTOP, false)); private set
 
+    /** Website mode (default) shows every DM; key mode uses the official API, which Meta restricts. */
+    var instagramWebMode by mutableStateOf(prefs.getBoolean(PREF_IG_WEB, true)); private set
+
     init {
         store.loadToken()?.let { token ->
             useToken(token)
@@ -41,7 +44,7 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
                 if (System.currentTimeMillis() - store.savedAt() > REFRESH_AFTER_MS) {
                     runCatching { refreshToken() }
                 }
-                loadInbox()
+                if (!instagramWebMode) loadInbox()
             }
         }
     }
@@ -149,6 +152,12 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun setInstagramWebMode(on: Boolean) {
+        instagramWebMode = on
+        prefs.edit().putBoolean(PREF_IG_WEB, on).apply()
+        if (!on && conversations.isEmpty()) loadInbox()
+    }
+
     fun setDesktopMode(on: Boolean) {
         messengerDesktopMode = on
         prefs.edit().putBoolean(PREF_DESKTOP, on).apply()
@@ -194,6 +203,7 @@ class InboxViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val PREF_DESKTOP = "messenger_desktop_mode"
+        const val PREF_IG_WEB = "instagram_web_mode"
         const val POLL_MS = 15_000L
         const val REFRESH_AFTER_MS = 7L * 24 * 60 * 60 * 1000
     }

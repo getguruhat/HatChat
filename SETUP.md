@@ -1,4 +1,6 @@
-# Getting your Instagram key
+# Optional: Instagram key mode
+
+> **Most people don't need this.** HatChat's Instagram tab uses Instagram's website by default and shows all your DMs with no setup. Key mode uses Meta's official API, which only shows chats with your developer app's testers until Meta approves the app in App Review.
 
 You only do this once. It takes about 10 minutes, and the app refreshes the key on its own after that.
 

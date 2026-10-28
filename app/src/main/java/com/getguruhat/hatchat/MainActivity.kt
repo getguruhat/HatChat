@@ -1,5 +1,6 @@
 package com.getguruhat.hatchat
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.webkit.ValueCallback
@@ -35,8 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.getguruhat.hatchat.ui.InstagramScreen
-import com.getguruhat.hatchat.ui.MessengerScreen
-import com.getguruhat.hatchat.ui.MessengerWeb
+import com.getguruhat.hatchat.ui.WebInbox
+import com.getguruhat.hatchat.ui.WebInboxScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,15 +60,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // One WebView for the whole session so switching tabs doesn't reload Messenger.
-        val messenger = MessengerWeb(this) { intent, callback ->
+        val pickFiles = { intent: Intent, callback: ValueCallback<Array<Uri>> ->
             fileCallback?.onReceiveValue(null)
             fileCallback = callback
             runCatching { filePicker.launch(intent) }.onFailure {
                 callback.onReceiveValue(null)
                 fileCallback = null
             }
+            Unit
         }
+        // One WebView per tab for the whole session, so switching tabs doesn't reload them.
+        val instagram = WebInbox.instagram(this, pickFiles)
+        val messenger = WebInbox.messenger(this, pickFiles)
 
         setContent {
             val dark = isSystemInDarkTheme()
@@ -106,9 +110,17 @@ class MainActivity : ComponentActivity() {
                 ) { padding ->
                     Box(Modifier.fillMaxSize().padding(padding)) {
                         when (tab) {
-                            0 -> InstagramScreen(vm, onOpenSettings = { tab = 2 })
-                            1 -> MessengerScreen(messenger, vm.messengerDesktopMode)
-                            else -> SettingsScreen(vm, onClearMessengerLogin = { MessengerWeb.clearLogin(messenger) })
+                            0 -> if (vm.instagramWebMode) {
+                                WebInboxScreen(instagram)
+                            } else {
+                                InstagramScreen(vm, onOpenSettings = { tab = 2 })
+                            }
+                            1 -> WebInboxScreen(messenger, vm.messengerDesktopMode)
+                            else -> SettingsScreen(
+                                vm,
+                                onSignOutInstagram = instagram::signOut,
+                                onClearMessengerLogin = messenger::signOut,
+                            )
                         }
                     }
                 }
