@@ -1,4 +1,4 @@
-<img src="docs/images/icon.svg" width="96" alt="HatChat icon">
+<img src="docs/images/icon.png" width="96" alt="HatChat icon">
 
 # HatChat
 
