@@ -147,6 +147,18 @@ fun SettingsScreen(vm: InboxViewModel, onSignOutInstagram: () -> Unit, onClearMe
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Allow USB inspection of web tabs")
+                Text(
+                    "For troubleshooting only. While on, a computer connected by USB can see the Instagram and Messenger pages. Turn it off when done.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Switch(checked = vm.webInspection, onCheckedChange = vm::allowWebInspection)
+        }
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
         Text(
             "HatChat is open source and not affiliated with Meta.",
             style = MaterialTheme.typography.bodySmall,

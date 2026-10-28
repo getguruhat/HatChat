@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
             Unit
         }
         // One WebView per tab for the whole session, so switching tabs doesn't reload them.
+        android.webkit.WebView.setWebContentsDebuggingEnabled(vm.webInspection)
         val instagram = WebInbox.instagram(this, pickFiles)
         val messenger = WebInbox.messenger(this, pickFiles)
 

@@ -4,7 +4,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.graphics.Bitmap
+import android.util.Log
+import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebResourceError
+import android.webkit.WebResourceResponse
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -64,9 +70,39 @@ class WebInbox(
 
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
                 canGoBack = view.canGoBack()
+                Log.d(TAG, "history ${short(url)}")
+            }
+
+            override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+                Log.d(TAG, "page start ${short(url)}")
+            }
+
+            override fun onPageFinished(view: WebView, url: String?) {
+                Log.d(TAG, "page done ${short(url)}")
+            }
+
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                if (request.isForMainFrame) Log.w(TAG, "load error ${error.errorCode} ${error.description} ${short(request.url.toString())}")
+            }
+
+            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
+                if (request.isForMainFrame) Log.w(TAG, "http ${response.statusCode} ${short(request.url.toString())}")
+            }
+
+            // Without this, a crashed page renderer takes the whole app down.
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                Log.e(TAG, "renderer gone, crashed=${detail.didCrash()}")
+                return true
             }
         }
         webChromeClient = object : WebChromeClient() {
+            override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+                if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                    Log.w(TAG, "console: ${message.message().take(200)}")
+                }
+                return true
+            }
+
             override fun onShowFileChooser(
                 view: WebView,
                 callback: ValueCallback<Array<Uri>>,
@@ -113,10 +149,14 @@ class WebInbox(
         desktopMode = null
     }
 
+    /** Host and path only: query strings can carry session details. */
+    private fun short(url: String?) = url?.let { Uri.parse(it) }?.let { "${it.host}${it.path}" } ?: "null"
+
     private fun isOwnHost(host: String?) =
         host != null && hosts.any { host == it || host.endsWith(".$it") }
 
     companion object {
+        private const val TAG = "HatChat"
         private const val DESKTOP_UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 
