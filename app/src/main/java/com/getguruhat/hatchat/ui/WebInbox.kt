@@ -241,6 +241,15 @@ class WebInbox(
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
 })();"""
+        // Facebook's top bar (logo, search, menu, notifications, profile) only leads out of
+        // Messenger: hide it and give its reserved space back to the chats.
+        private const val FACEBOOK_HIDE_HEADER_JS = """(function () {
+  if (document.getElementById('hatchat-fb')) return;
+  var s = document.createElement('style');
+  s.id = 'hatchat-fb';
+  s.textContent = 'div[role=banner]{display:none!important} :root{--header-height:0px!important}';
+  (document.head || document.documentElement).appendChild(s);
+})();"""
         private const val DESKTOP_UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 
@@ -270,6 +279,7 @@ class WebInbox(
                 "/two_factor(/.*)?", "/recover(/.*)?", "/auth_platform(/.*)?", "/dialog(/.*)?",
                 "/privacy/consent(/.*)?", "/cookie(/.*)?", "/confirmemail(\\.php)?", "/device-based(/.*)?",
             ).map(::Regex),
+            pageScript = FACEBOOK_HIDE_HEADER_JS,
             pickFiles = pickFiles,
         )
     }
