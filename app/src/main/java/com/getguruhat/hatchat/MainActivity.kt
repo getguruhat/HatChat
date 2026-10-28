@@ -37,7 +37,13 @@ import androidx.compose.ui.platform.LocalContext
 import com.getguruhat.hatchat.ui.InstagramScreen
 import com.getguruhat.hatchat.ui.MessengerScreen
 import com.getguruhat.hatchat.ui.MessengerWeb
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.getguruhat.hatchat.ui.SettingsScreen
+import com.getguruhat.hatchat.update.UpdateDialog
+import com.getguruhat.hatchat.update.UpdateViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -74,6 +80,12 @@ class MainActivity : ComponentActivity() {
             }
             MaterialTheme(colorScheme = colors) {
                 var tab by rememberSaveable { mutableIntStateOf(0) }
+
+                val updates: UpdateViewModel = viewModel()
+                val updateState by updates.state.collectAsStateWithLifecycle()
+                LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { updates.onResume() }
+                UpdateDialog(updateState, onUpdate = updates::update, onDismiss = updates::dismiss)
+
                 Scaffold(
                     bottomBar = {
                         NavigationBar {

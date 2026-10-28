@@ -16,7 +16,7 @@ A small, open-source Android app from [GuruHat](https://github.com/getguruhat) f
 | Replying late | Replies are allowed only within **24 hours** of the other person's last message. Ticking "Human Agent" extends that to 7 days. |
 | Starting new chats | You can't DM someone who hasn't messaged you first. |
 | Group chats | Not available through the API. |
-| Notifications | v0.1 has no push notifications. Instagram chats refresh every 15 s while open. |
+| Notifications | No push notifications yet. Instagram chats refresh every 15 s while open. |
 | Feed / Reels / Stories | Not included, on purpose. |
 
 ## Download / build
@@ -25,6 +25,10 @@ The APK is built by GitHub Actions. Nothing is needed on your computer.
 
 - **Latest build:** open the **Actions** tab, pick the newest "Build APK" run, and download **HatChat-apk**.
 - **Releases:** pushing a tag like `v0.1.0` attaches the APK to a GitHub Release.
+
+**Updates:** when HatChat opens, it checks this repo's latest release. If there's a newer version, it offers **Update**, downloads the APK, and opens Android's installer. The first time, Android asks you to allow HatChat to install apps.
+
+**Publishing a release:** push a tag like `v0.1.3`. The version is taken from the tag.
 
 To build locally instead, you need JDK 17 and the Android SDK, then run `./gradlew assembleDebug`.
 
