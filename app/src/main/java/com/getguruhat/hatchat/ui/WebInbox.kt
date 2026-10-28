@@ -41,6 +41,8 @@ class WebInbox(
     private val signOutHosts: List<String>,
     /** Paths that leave the inbox (feed, stories…); visiting one sends you back to [startUrl]. */
     private val blockedPaths: List<Regex> = emptyList(),
+    /** If set, only these paths may load; anything else (feed, Watch, Marketplace…) goes back to [startUrl]. */
+    private val allowedPaths: List<Regex>? = null,
     /** Extra script run on every page/navigation, e.g. to hide buttons that lead out of the inbox. */
     private val pageScript: String? = null,
     private val pickFiles: (Intent, ValueCallback<Array<Uri>>) -> Unit,
@@ -66,7 +68,8 @@ class WebInbox(
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
                 if (uri.scheme == "https" && isOwnHost(uri.host)) {
-                    if (isBlocked(uri)) { view.loadUrl(startUrl); return true }
+                    // Only redirect whole-page loads; embedded frames (login helpers etc.) load normally.
+                    if (request.isForMainFrame && isBlocked(uri) && backToInbox(view)) return true
                     return false
                 }
                 // Outside links open in the real browser; app deep links (fb://, intent://) are dropped.
@@ -81,9 +84,8 @@ class WebInbox(
                 Log.d(TAG, "history ${short(url)}")
                 // In-page navigation (pushState) never reaches shouldOverrideUrlLoading.
                 if (url != null && isBlocked(Uri.parse(url))) {
-                    Log.d(TAG, "blocked ${short(url)}, back to inbox")
-                    view.loadUrl(startUrl)
-                    return
+                    Log.d(TAG, "blocked ${short(url)}")
+                    if (backToInbox(view)) return
                 }
                 runPageScripts(view)
             }
@@ -157,7 +159,25 @@ class WebInbox(
         pageScript?.let { view.evaluateJavascript(it, null) }
     }
 
-    private fun isBlocked(uri: Uri) = blockedPaths.any { it.matches(uri.path ?: "/") }
+    private val redirects = ArrayDeque<Long>()
+
+    /** Returns to the inbox, unless we've already bounced 3 times in 10 s (the site is redirecting back). */
+    private fun backToInbox(view: WebView): Boolean {
+        val now = System.currentTimeMillis()
+        while (redirects.isNotEmpty() && now - redirects.first() > 10_000) redirects.removeFirst()
+        if (redirects.size >= 3) {
+            Log.w(TAG, "redirect loop, leaving page as is")
+            return false
+        }
+        redirects.addLast(now)
+        view.loadUrl(startUrl)
+        return true
+    }
+
+    private fun isBlocked(uri: Uri): Boolean {
+        val path = uri.path?.ifEmpty { "/" } ?: "/"
+        return blockedPaths.any { it.matches(path) } || allowedPaths?.none { it.matches(path) } == true
+    }
 
     /** Signs out by expiring this service's cookies; the other tab stays signed in. */
     fun signOut() {
@@ -242,6 +262,14 @@ class WebInbox(
             startUrl = "https://www.facebook.com/messages/",
             hosts = listOf("facebook.com", "messenger.com", "fb.com", "fbcdn.net", "facebook.net"),
             signOutHosts = listOf("facebook.com", "messenger.com"),
+            // Facebook has endless sections, so allow only chats plus the login/security
+            // pages it needs; the feed and everything else returns to the inbox.
+            allowedPaths = listOf(
+                "/messages(/.*)?", "/messenger_media(/.*)?",
+                "/login(\\.php)?(/.*)?", "/logout(\\.php)?", "/checkpoint(/.*)?", "/two_step_verification(/.*)?",
+                "/two_factor(/.*)?", "/recover(/.*)?", "/auth_platform(/.*)?", "/dialog(/.*)?",
+                "/privacy/consent(/.*)?", "/cookie(/.*)?", "/confirmemail(\\.php)?", "/device-based(/.*)?",
+            ).map(::Regex),
             pickFiles = pickFiles,
         )
     }
