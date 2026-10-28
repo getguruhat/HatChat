@@ -244,14 +244,48 @@ class WebInbox(
     }).observe(document.documentElement, { childList: true, subtree: true });
   }
 })();"""
-        // Facebook's top bar (logo, search, menu, notifications, profile) only leads out of
-        // Messenger: hide it and give its reserved space back to the chats.
-        private const val FACEBOOK_HIDE_HEADER_JS = """(function () {
-  if (document.getElementById('hatchat-fb')) return;
-  var s = document.createElement('style');
-  s.id = 'hatchat-fb';
-  s.textContent = 'div[role=banner]{display:none!important} :root{--header-height:0px!important}';
-  (document.head || document.documentElement).appendChild(s);
+        // Fits Facebook's desktop Messenger to a phone:
+        // - hides the top bar (logo, search, menu, notifications, profile), which only leads out;
+        // - on /messages/ shows the chat list full screen (Facebook collapses it to zero height
+        //   at phone width, leaving an empty "No chats selected" pane);
+        // - removes the "screen height minus 56px top bar" limits that left a blank strip.
+        private const val FACEBOOK_JS = """(function () {
+  var css = 'div[role=banner]{display:none!important}' +
+    ':root{--header-height:0px!important}' +
+    'div:has(> div > [role=main]){height:100vh!important;max-height:none!important}' +
+    'div:has(> [role=main]){height:100%!important;max-height:none!important}' +
+    'html.hatchat-inbox div:has(> [aria-label="Thread list"]){height:100vh!important;max-height:none!important}' +
+    'html.hatchat-inbox [aria-label="Thread list"]{visibility:visible!important;position:absolute!important;inset:0!important;' +
+    'width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;z-index:5!important;' +
+    'background:var(--web-wash,#fff)!important}';
+  var s = document.getElementById('hatchat-fb');
+  if (!s) { s = document.createElement('style'); s.id = 'hatchat-fb'; (document.head || document.documentElement).appendChild(s); }
+  if (s.textContent !== css) s.textContent = css;
+
+  function fill() {
+    document.documentElement.classList.toggle('hatchat-inbox', /^\/messages\/?$/.test(location.pathname));
+    var main = document.querySelector('[role=main]');
+    if (!main) return;
+    var target = window.innerHeight - 56;
+    var nodes = [].slice.call(main.querySelectorAll('div')).concat(
+      [].slice.call(document.querySelectorAll('[aria-label="Thread list"], [aria-label="Thread list"] div')));
+    for (var i = 0; i < nodes.length; i++) {
+      var max = parseFloat(getComputedStyle(nodes[i]).maxHeight);
+      if (max && Math.abs(max - target) <= 6) nodes[i].style.setProperty('max-height', 'none', 'important');
+    }
+  }
+  fill();
+  if (!window.__hatchatFb) {
+    window.__hatchatFb = true;
+    var last = 0, timer = null;
+    var run = function () {
+      var now = Date.now();
+      if (now - last > 400) { last = now; fill(); }
+      else if (!timer) timer = setTimeout(function () { timer = null; last = Date.now(); fill(); }, 400);
+    };
+    new MutationObserver(run).observe(document.body || document.documentElement, { childList: true, subtree: true });
+    window.addEventListener('resize', run);
+  }
 })();"""
         private const val DESKTOP_UA =
             "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
@@ -282,7 +316,7 @@ class WebInbox(
                 "/two_factor(/.*)?", "/recover(/.*)?", "/auth_platform(/.*)?", "/dialog(/.*)?",
                 "/privacy/consent(/.*)?", "/cookie(/.*)?", "/confirmemail(\\.php)?", "/device-based(/.*)?",
             ).map(::Regex),
-            pageScript = FACEBOOK_HIDE_HEADER_JS,
+            pageScript = FACEBOOK_JS,
             pickFiles = pickFiles,
         )
     }
